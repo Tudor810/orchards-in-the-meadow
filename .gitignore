@@ -1,1 +1,19 @@
-/breizhcrops_dataset
+# Python environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Data (CRITICAL: BreizhCrops is huge)
+breizhcrops_dataset/
+
+# Trained Models
+Models/*.pth
+Models/*.pt
+
+# IDE / OS specific
+.idea/
+.vscode/
+.DS_Store
+
+train_target_indices.json
+test_target_indices.json
