@@ -1,6 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "agricultureai"
 version = "0.1.0"
 description = "Add your description here"
-requires-python = ">=3.14"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "breizhcrops",
+    "pandas",
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "tqdm",
+    "openpyxl>=3.1.5",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

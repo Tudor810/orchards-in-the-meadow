@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: agricultureai
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.12
+Requires-Dist: breizhcrops
+Requires-Dist: pandas
+Requires-Dist: torch
+Requires-Dist: torchvision
+Requires-Dist: torchaudio
+Requires-Dist: tqdm
+Requires-Dist: openpyxl>=3.1.5
