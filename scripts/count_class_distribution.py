@@ -1,11 +1,25 @@
 import argparse
 from datetime import datetime
 from pathlib import Path
+import time
+from urllib.error import ContentTooShortError
 
 import pandas as pd
 from tqdm import tqdm
 
 import breizhcrops as bzh
+
+
+def load_dataset_with_retries(region: str, level: str, retries: int, retry_sleep_s: int):
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            return bzh.BreizhCrops(region, level=level)
+        except ContentTooShortError as e:
+            last_err = e
+            print(f"Download incomplete for {region} (attempt {attempt}/{retries}). Retrying in {retry_sleep_s}s...")
+            time.sleep(retry_sleep_s)
+    raise last_err
 
 
 def count_labels(dataset, num_classes: int = 9):
@@ -22,6 +36,9 @@ def main():
     parser = argparse.ArgumentParser(description="Count label distribution in BreizhCrops regions.")
     parser.add_argument("--level", default="L1C", help="Dataset level (e.g. L1C or L2A).")
     parser.add_argument("--regions", nargs="+", default=["frh01", "frh02", "frh03"])
+    parser.add_argument("--retries", type=int, default=3, help="Retries for interrupted downloads.")
+    parser.add_argument("--retry-sleep", type=int, default=20, help="Seconds to wait between retries.")
+    parser.add_argument("--skip-failed", action="store_true", help="Skip regions that still fail after retries.")
     parser.add_argument("--output", default="")
     args = parser.parse_args()
 
@@ -40,7 +57,18 @@ def main():
     rows = {}
     for region in args.regions:
         print(f"Loading {region} level={args.level} ...")
-        ds = bzh.BreizhCrops(region, level=args.level)
+        try:
+            ds = load_dataset_with_retries(
+                region=region,
+                level=args.level,
+                retries=args.retries,
+                retry_sleep_s=args.retry_sleep,
+            )
+        except ContentTooShortError as e:
+            if args.skip_failed:
+                print(f"Skipping {region} after {args.retries} failed download attempts: {e}")
+                continue
+            raise
         counts = count_labels(ds, num_classes=9)
         rows[region] = {f"{i} {id_to_crop[i]}": counts[i] for i in range(9)}
 

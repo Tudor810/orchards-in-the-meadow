@@ -1,2 +1,1 @@
-__all__ = ["temp_cnn"]
-
+__all__ = ["temp_cnn", "breizhcrops_transformer", "breizhcrops_tempcnn"]
