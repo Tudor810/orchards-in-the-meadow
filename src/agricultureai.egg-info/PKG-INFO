@@ -10,3 +10,7 @@ Requires-Dist: torchvision
 Requires-Dist: torchaudio
 Requires-Dist: tqdm
 Requires-Dist: openpyxl>=3.1.5
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Provides-Extra: tracking
+Requires-Dist: wandb; extra == "tracking"

@@ -4,6 +4,8 @@ import time
 
 import torch
 
+from agricultureai.training.checkpoints import build_checkpoint_payload
+
 
 class ModelTrainer:
     def __init__(
@@ -17,6 +19,11 @@ class ModelTrainer:
         target_ids,
         *,
         eval_set_name: str = "validation",
+        architecture_config: dict | None = None,
+        run_config: dict | None = None,
+        track_with_wandb: bool = False,
+        wandb_project: str = "dmoe-thesis",
+        wandb_run_name: str | None = None,
     ):
         self.model = model
         self.train_loader = train_loader
@@ -26,6 +33,55 @@ class ModelTrainer:
         self.device = device
         self.target_ids = target_ids
         self.eval_set_name = eval_set_name
+        self.architecture_config = dict(architecture_config or {})
+        self.run_config = dict(run_config or {})
+        self._wandb = None
+        self._wandb_run = None
+        if track_with_wandb:
+            self._init_wandb(wandb_project, wandb_run_name)
+
+    def _init_wandb(self, project: str, run_name: str | None) -> None:
+        try:
+            import wandb
+        except ImportError as exc:
+            raise RuntimeError(
+                "W&B tracking requested, but wandb is not installed. "
+                "Install it with `python -m pip install wandb`."
+            ) from exc
+        self._wandb = wandb
+        config = {
+            **self.run_config,
+            "target_ids": list(self.target_ids),
+            "eval_set": self.eval_set_name,
+            "architecture_config": self.architecture_config,
+        }
+        self._wandb_run = wandb.init(project=project, name=run_name or None, config=config)
+
+    def _checkpoint_payload(self, metadata: dict) -> dict:
+        return build_checkpoint_payload(
+            self.model,
+            architecture_config=self.architecture_config,
+            training_metadata={
+                **self.run_config,
+                **metadata,
+                "target_ids": list(self.target_ids),
+                "eval_set": self.eval_set_name,
+            },
+        )
+
+    def _save_checkpoint(self, path: str, metadata: dict) -> None:
+        torch.save(self._checkpoint_payload(metadata), path)
+
+    def _log_wandb_metrics(self, metrics: dict, *, step: int) -> None:
+        if self._wandb is not None:
+            self._wandb.log(metrics, step=step)
+
+    def _log_wandb_artifact(self, path: str, *, name: str) -> None:
+        if self._wandb is None or self._wandb_run is None or not os.path.isfile(path):
+            return
+        artifact = self._wandb.Artifact(name=name, type="model")
+        artifact.add_file(path)
+        self._wandb_run.log_artifact(artifact)
 
     def _filter_and_remap(self, inputs, targets):
         """Isolates target crops and remaps their IDs to 0, 1, 2..."""
@@ -179,18 +235,38 @@ class ModelTrainer:
                         f"{lr:.8e}",
                     ])
 
+            self._log_wandb_metrics(
+                {
+                    "train_loss": train_loss,
+                    "train_acc": train_acc,
+                    "val_acc": test_acc,
+                    "lr": lr,
+                    "epoch_time_seconds": epoch_time,
+                },
+                step=epoch + 1,
+            )
+
             if checkpoint_dir:
                 epoch_path = os.path.join(checkpoint_dir, f"epoch_{epoch + 1:03d}.pt")
                 latest_path = os.path.join(checkpoint_dir, "latest.pt")
-                torch.save(self.model.state_dict(), epoch_path)
-                torch.save(self.model.state_dict(), latest_path)
+                metadata = {
+                    "epoch": epoch + 1,
+                    "train_loss": train_loss,
+                    "train_accuracy": train_acc,
+                    "val_accuracy": test_acc,
+                    "learning_rate": lr,
+                    "epoch_time_seconds": epoch_time,
+                }
+                self._save_checkpoint(epoch_path, metadata)
+                self._save_checkpoint(latest_path, metadata)
                 print(f"  -> Saved checkpoint: {epoch_path}")
 
                 if test_acc > best_test_acc:
                     best_test_acc = test_acc
                     best_epoch = epoch + 1
                     best_path = os.path.join(checkpoint_dir, "best.pt")
-                    torch.save(self.model.state_dict(), best_path)
+                    self._save_checkpoint(best_path, {**metadata, "best_epoch": best_epoch})
+                    self._log_wandb_artifact(best_path, name=f"best-{os.path.basename(checkpoint_dir)}")
                     print(f"  -> New best val acc on {self.eval_set_name} {best_test_acc:.4f}% (saved {best_path})")
 
             if lr_scheduler is not None:
@@ -203,5 +279,16 @@ class ModelTrainer:
             parent = os.path.dirname(os.path.abspath(save_path))
             if parent:
                 os.makedirs(parent, exist_ok=True)
-            torch.save(self.model.state_dict(), save_path)
+            self._save_checkpoint(
+                save_path,
+                {
+                    "epoch": epochs,
+                    "best_epoch": best_epoch,
+                    "best_val_accuracy": best_test_acc,
+                },
+            )
+            self._log_wandb_artifact(save_path, name=f"final-{os.path.splitext(os.path.basename(save_path))[0]}")
             print(f"Model successfully saved to {save_path}")
+
+        if self._wandb_run is not None:
+            self._wandb_run.finish()

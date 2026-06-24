@@ -8,6 +8,7 @@ from agricultureai.data.breizhcrops_super_classes import SUPER_CLASS_ID_TO_NAME
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN as DEFAULT_MAX_SEQ_LEN
 from agricultureai.evaluation.transformer import evaluate_per_class
 from agricultureai.models.breizhcrops_transformer import BreizhCropsTransformerClassifier
+from agricultureai.training.checkpoints import load_checkpoint, model_state_dict_from_checkpoint
 from agricultureai.training.trainer import ModelTrainer
 
 
@@ -82,6 +83,9 @@ def main():
         action="store_true",
         help="Load <checkpoint-dir>/best.pt before training. Ignored if --init-weights is set.",
     )
+    parser.add_argument("--wandb", action="store_true", help="Log metrics and best checkpoint to Weights & Biases.")
+    parser.add_argument("--wandb-project", default="dmoe-thesis")
+    parser.add_argument("--wandb-run-name", default="")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -125,8 +129,8 @@ def main():
     if init_path:
         if not os.path.isfile(init_path):
             raise SystemExit(f"Init weights not found: {init_path}")
-        state = torch.load(init_path, map_location=device)
-        model.load_state_dict(state, strict=True)
+        checkpoint = load_checkpoint(init_path, map_location=device)
+        model.load_state_dict(model_state_dict_from_checkpoint(checkpoint), strict=True)
         print(f"Loaded initial weights from {init_path}")
 
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=float(args.label_smoothing))
@@ -139,6 +143,30 @@ def main():
     if not args.no_cosine_lr:
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
+    architecture_config = {
+        "model_type": "transformer",
+        "expert": "level1_router",
+        "input_dim": 13,
+        "channels": 13,
+        "seq_len": int(args.max_seq_len),
+        "num_classes": num_classes,
+        "freeze_backbone": freeze_backbone,
+        "pretrained": not args.from_scratch,
+        "level": args.level,
+        "target_ids": list(args.target_ids),
+    }
+    run_config = {
+        "regions": list(args.regions),
+        "val_regions": val_regions,
+        "use_train_region_holdout": use_holdout,
+        "epochs": int(args.epochs),
+        "batch_size": int(args.batch_size),
+        "lr": float(args.lr),
+        "weight_decay": float(args.weight_decay),
+        "cosine_lr": not args.no_cosine_lr,
+        "label_smoothing": float(args.label_smoothing),
+        "max_samples": int(args.max_samples),
+    }
     trainer = ModelTrainer(
         model=model,
         train_loader=train_loader,
@@ -148,6 +176,11 @@ def main():
         device=device,
         target_ids=args.target_ids,
         eval_set_name=eval_set_name,
+        architecture_config=architecture_config,
+        run_config=run_config,
+        track_with_wandb=args.wandb,
+        wandb_project=args.wandb_project,
+        wandb_run_name=(args.wandb_run_name or None),
     )
 
     ckpt_dir = None if args.no_checkpoints else (args.checkpoint_dir or "").strip() or None
@@ -164,7 +197,8 @@ def main():
     if ckpt_dir and not args.eval_last_epoch:
         best_path = os.path.join(ckpt_dir, "best.pt")
         if os.path.isfile(best_path):
-            model.load_state_dict(torch.load(best_path, map_location=device))
+            checkpoint = load_checkpoint(best_path, map_location=device)
+            model.load_state_dict(model_state_dict_from_checkpoint(checkpoint))
             print(f"Loaded {best_path} for final per-class evaluation.")
 
     evaluate_per_class(

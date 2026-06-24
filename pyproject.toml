@@ -17,6 +17,14 @@ dependencies = [
     "openpyxl>=3.1.5",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+tracking = [
+    "wandb",
+]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 

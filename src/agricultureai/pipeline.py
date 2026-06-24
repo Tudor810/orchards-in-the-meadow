@@ -1,0 +1,304 @@
+"""Stage-4 System Integration: the unified 4-Tier DMOE inference pipeline.
+
+``DMOEPipeline`` chains five standalone models via soft probabilistic routing:
+
+    x (B, T, C)
+      |
+      v
+    [L1 Generalist] -> P_L1 over 4 super-classes
+      |-- P(Rapeseed) / P(Corn) ---------------------------> global raw {2, 3}
+      |-- P(Cereal) > tau -> [L2a] -> barley / wheat       -> global {0, 1}
+      `-- P(Grass) > tau -> [L2b Anomaly Gate]
+              |-- P(Grass) branch > tau -> [L2c Meadow]     -> global {7, 8}
+              `-- P(Anomaly) branch > tau -> [L3 ProtoNet]  -> global {4, 5, 6}
+                  (L3 meadow locals {0,1} accumulate onto {7,8} as rejection mass)
+
+Joint composition (per sample)::
+
+    P(PM) = P_L1(grass) * P_L2b(grass) * P_L2c(PM)
+    P(TM) = P_L1(grass) * P_L2b(grass) * P_L2c(TM)
+    P(tree_k) = P_L1(grass) * P_L2b(anomaly) * P_L3(tree_k)
+    P(meadow_k) += P_L1(grass) * P_L2b(anomaly) * P_L3(meadow_k)   # L3 rejection
+
+Temperatures ``t1``, ``t2b``, ``t2c``, ``t3`` scale each stage before the product.
+Cost-sensitive decode adds ``b_meadow`` / ``b_tree`` in log-space before argmax.
+"""
+
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple
+
+import torch
+import torch.nn as nn
+
+from agricultureai.data.breizhcrops_l2b_anomaly_gate import L2B_ANOMALY_LOCAL, L2B_GRASS_LOCAL
+from agricultureai.data.breizhcrops_l2c_meadow import MEADOW_LOCAL_TO_GLOBAL
+from agricultureai.data.breizhcrops_series import infer_padding_mask_from_features
+from agricultureai.models.breizhcrops_gltae import BreizhCropsGLTAEExpert
+from agricultureai.models.proto_net import (
+    squared_euclidean_distance,
+    squared_mahalanobis_distance,
+)
+
+# --- Super-class space (L1 Generalist output) ---------------------------------
+SUPER_CEREAL_GROUP = 0
+SUPER_RAPESEED = 1
+SUPER_CORN = 2
+SUPER_GRASSLAND_GROUP = 3
+
+# --- Global BreizhCrops raw ids (final prediction space) ----------------------
+GLOBAL_BARLEY = 0
+GLOBAL_WHEAT = 1
+GLOBAL_RAPESEED = 2
+GLOBAL_CORN = 3
+GLOBAL_SUNFLOWER = 4
+GLOBAL_ORCHARDS = 5
+GLOBAL_NUTS = 6
+GLOBAL_PERMANENT_MEADOWS = 7
+GLOBAL_TEMPORARY_MEADOWS = 8
+
+NUM_GLOBAL_CLASSES = 9
+
+MEADOW_GLOBAL_IDS: Tuple[int, int] = (GLOBAL_PERMANENT_MEADOWS, GLOBAL_TEMPORARY_MEADOWS)
+TREE_GLOBAL_IDS: Tuple[int, int, int] = (GLOBAL_SUNFLOWER, GLOBAL_ORCHARDS, GLOBAL_NUTS)
+
+# --- Local-expert -> global raw id mappings -----------------------------------
+CEREAL_LOCAL_TO_GLOBAL: Dict[int, int] = {
+    0: GLOBAL_BARLEY,
+    1: GLOBAL_WHEAT,
+}
+
+L3_LOCAL_TO_GLOBAL: Dict[int, int] = {
+    0: GLOBAL_PERMANENT_MEADOWS,
+    1: GLOBAL_TEMPORARY_MEADOWS,
+    2: GLOBAL_ORCHARDS,
+    3: GLOBAL_NUTS,
+    4: GLOBAL_SUNFLOWER,
+}
+
+# Legacy aliases (3-tier grassland expert); kept for older scripts/tests.
+GRASSLAND_LOCAL_TO_GLOBAL = MEADOW_LOCAL_TO_GLOBAL
+GRASSLAND_ANOMALY_LOCAL_INDEX = L2B_ANOMALY_LOCAL
+
+
+def _lookup_table(mapping: Dict[int, int], size: int) -> torch.Tensor:
+    lut = torch.zeros(size, dtype=torch.long)
+    for local_id, global_id in mapping.items():
+        lut[int(local_id)] = int(global_id)
+    return lut
+
+
+class DMOEPipeline(nn.Module):
+    """Master orchestrator chaining L1 -> {L2a, L2b -> L2c / L3} via soft routing."""
+
+    def __init__(
+        self,
+        l1_model: nn.Module,
+        l2a_cereal: nn.Module,
+        l2b_anomaly_gate: nn.Module,
+        l2c_meadow: nn.Module,
+        l3_protonet: nn.Module,
+        support_prototypes: torch.Tensor,
+        *,
+        support_inv_variances: Optional[torch.Tensor] = None,
+        anomaly_threshold: float = 0.20,
+        t1: float = 1.0,
+        t2b: float = 1.0,
+        t2c: float = 1.0,
+        t3: float = 1.0,
+        b_meadow: float = 0.0,
+        b_tree: float = 0.0,
+        tau_route: float = 0.05,
+    ) -> None:
+        super().__init__()
+        if support_prototypes.dim() != 2:
+            raise ValueError(
+                f"support_prototypes must be (n_way, hidden_dim); got "
+                f"{tuple(support_prototypes.shape)}"
+            )
+        if support_prototypes.size(0) != len(L3_LOCAL_TO_GLOBAL):
+            raise ValueError(
+                f"support_prototypes must have {len(L3_LOCAL_TO_GLOBAL)} rows; got "
+                f"{support_prototypes.size(0)}"
+            )
+        for name, value in (("t1", t1), ("t2b", t2b), ("t2c", t2c), ("t3", t3)):
+            if float(value) <= 0.0:
+                raise ValueError(f"{name} must be > 0; got {value}")
+        if not 0.0 <= float(tau_route) < 1.0:
+            raise ValueError(f"tau_route must be in [0, 1); got {tau_route}")
+
+        self.l1_model = l1_model
+        self.l2a_cereal = l2a_cereal
+        self.l2b_anomaly_gate = l2b_anomaly_gate
+        self.l2c_meadow = l2c_meadow
+        self.l3_protonet = l3_protonet
+
+        self.anomaly_threshold = float(anomaly_threshold)
+        self.t1 = float(t1)
+        self.t2b = float(t2b)
+        self.t2c = float(t2c)
+        self.t3 = float(t3)
+        self.b_meadow = float(b_meadow)
+        self.b_tree = float(b_tree)
+        self.tau_route = float(tau_route)
+
+        self.register_buffer("support_prototypes", support_prototypes.detach().clone())
+
+        if support_inv_variances is not None:
+            if support_inv_variances.shape != support_prototypes.shape:
+                raise ValueError(
+                    f"support_inv_variances shape "
+                    f"{tuple(support_inv_variances.shape)} must match "
+                    f"support_prototypes shape {tuple(support_prototypes.shape)}"
+                )
+            if not bool((support_inv_variances > 0).all()):
+                raise ValueError("support_inv_variances must be strictly positive")
+            self.register_buffer(
+                "support_inv_variances", support_inv_variances.detach().clone()
+            )
+        else:
+            self.register_buffer("support_inv_variances", None)
+
+        self.register_buffer(
+            "cereal_local_to_global_lut",
+            _lookup_table(CEREAL_LOCAL_TO_GLOBAL, size=2),
+            persistent=False,
+        )
+        self.register_buffer(
+            "meadow_local_to_global_lut",
+            _lookup_table(MEADOW_LOCAL_TO_GLOBAL, size=2),
+            persistent=False,
+        )
+        self.register_buffer(
+            "l3_local_to_global_lut",
+            _lookup_table(L3_LOCAL_TO_GLOBAL, size=len(L3_LOCAL_TO_GLOBAL)),
+            persistent=False,
+        )
+
+        self.last_l3_count: int = 0
+
+    def _l2b_forward(
+        self,
+        grass_x: torch.Tensor,
+        doy: Optional[torch.Tensor] = None,
+        padding_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if padding_mask is None:
+            padding_mask = infer_padding_mask_from_features(grass_x)
+        if doy is None:
+            doy = torch.zeros(
+                grass_x.size(0),
+                grass_x.size(1),
+                dtype=torch.long,
+                device=grass_x.device,
+            )
+        if isinstance(self.l2b_anomaly_gate, BreizhCropsGLTAEExpert):
+            return self.l2b_anomaly_gate(grass_x, doy, padding_mask)
+        return self.l2b_anomaly_gate(grass_x)
+
+    @torch.inference_mode()
+    def forward_probs(
+        self,
+        x: torch.Tensor,
+        doy: Optional[torch.Tensor] = None,
+        padding_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if x.dim() != 3:
+            raise ValueError(f"Expected (B, T, C) input; got shape {tuple(x.shape)}")
+
+        batch_size = x.size(0)
+        self.last_l3_count = 0
+        probs = x.new_zeros((batch_size, NUM_GLOBAL_CLASSES))
+
+        l1_logits = self.l1_model(x)
+        l1_probs = torch.softmax(l1_logits / self.t1, dim=1)
+        p_cereal = l1_probs[:, SUPER_CEREAL_GROUP]
+        p_grass = l1_probs[:, SUPER_GRASSLAND_GROUP]
+
+        probs[:, GLOBAL_RAPESEED] = l1_probs[:, SUPER_RAPESEED]
+        probs[:, GLOBAL_CORN] = l1_probs[:, SUPER_CORN]
+
+        # --- L2a cereal branch ------------------------------------------------
+        run_l2a = p_cereal > self.tau_route
+        if bool(run_l2a.any()):
+            cereal_rows = run_l2a.nonzero(as_tuple=True)[0]
+            cereal_logits = self.l2a_cereal(x[run_l2a])
+            cereal_probs = torch.softmax(cereal_logits, dim=1)
+            cereal_joint = cereal_probs * p_cereal[run_l2a].unsqueeze(1)
+            probs[
+                cereal_rows.unsqueeze(1),
+                self.cereal_local_to_global_lut.unsqueeze(0),
+            ] = cereal_joint
+
+        # --- L2b anomaly gate + L2c meadow + L3 rescue ------------------------
+        run_l2b = p_grass > self.tau_route
+        if bool(run_l2b.any()):
+            grass_rows = run_l2b.nonzero(as_tuple=True)[0]
+            grass_x = x[run_l2b]
+            grass_doy = doy[run_l2b] if doy is not None else None
+            grass_mask = padding_mask[run_l2b] if padding_mask is not None else None
+
+            gate_logits = self._l2b_forward(grass_x, grass_doy, grass_mask)
+            gate_probs = torch.softmax(gate_logits / self.t2b, dim=1)
+            p_grass_sub = p_grass[run_l2b]
+            p_l2b_grass = gate_probs[:, L2B_GRASS_LOCAL]
+            p_l2b_anomaly = gate_probs[:, L2B_ANOMALY_LOCAL]
+
+            grass_path_mass = p_grass_sub * p_l2b_grass
+            anomaly_mass = p_grass_sub * p_l2b_anomaly
+
+            # L2c meadow expert on the grass branch mass.
+            run_l2c = grass_path_mass > self.tau_route
+            if bool(run_l2c.any()):
+                l2c_rows = grass_rows[run_l2c]
+                meadow_logits = self.l2c_meadow(
+                    grass_x[run_l2c],
+                    doy=grass_doy[run_l2c] if grass_doy is not None else None,
+                    padding_mask=grass_mask[run_l2c] if grass_mask is not None else None,
+                )
+                meadow_probs = torch.softmax(meadow_logits / self.t2c, dim=1)
+                meadow_joint = meadow_probs * grass_path_mass[run_l2c].unsqueeze(1)
+                probs[
+                    l2c_rows.unsqueeze(1),
+                    self.meadow_local_to_global_lut.unsqueeze(0),
+                ] = meadow_joint
+
+            # L3 ProtoNet on the anomaly branch mass (meadow locals accumulate).
+            run_l3 = anomaly_mass > self.tau_route
+            if bool(run_l3.any()):
+                l3_rows = grass_rows[run_l3]
+                embeddings = self.l3_protonet.embed(grass_x[run_l3])
+                if hasattr(self.l3_protonet, "pseudo_distances"):
+                    distances = self.l3_protonet.pseudo_distances(grass_x[run_l3])
+                elif self.support_inv_variances is not None:
+                    distances = squared_mahalanobis_distance(
+                        embeddings,
+                        self.support_prototypes,
+                        self.support_inv_variances,
+                    )
+                else:
+                    distances = squared_euclidean_distance(
+                        embeddings, self.support_prototypes
+                    )
+                l3_probs = torch.softmax(-distances / self.t3, dim=1)
+                l3_joint = l3_probs * anomaly_mass[run_l3].unsqueeze(1)
+                probs[
+                    l3_rows.unsqueeze(1),
+                    self.l3_local_to_global_lut.unsqueeze(0),
+                ] += l3_joint
+                self.last_l3_count = int(run_l3.sum().item())
+
+        return probs
+
+    @torch.inference_mode()
+    def forward(
+        self,
+        x: torch.Tensor,
+        doy: Optional[torch.Tensor] = None,
+        padding_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        probs = self.forward_probs(x, doy=doy, padding_mask=padding_mask)
+        log_p = torch.log(probs + 1e-9)
+        log_p[:, list(MEADOW_GLOBAL_IDS)] += self.b_meadow
+        log_p[:, list(TREE_GLOBAL_IDS)] += self.b_tree
+        return log_p.argmax(dim=-1)

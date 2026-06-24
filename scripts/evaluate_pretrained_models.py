@@ -27,6 +27,7 @@ from agricultureai.data.breizhcrops_super_classes import SUPER_CLASS_ID_TO_NAME
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN, pad_collate
 
 from agricultureai.models.breizhcrops_transformer import BreizhCropsTransformerClassifier
+from agricultureai.training.checkpoints import load_checkpoint, model_state_dict_from_checkpoint
 
 
 
@@ -616,9 +617,9 @@ def main():
 
         )
 
-        state = torch.load(str(ckpt_path), map_location=device)
+        checkpoint = load_checkpoint(ckpt_path, map_location=device)
 
-        model.load_state_dict(state, strict=True)
+        model.load_state_dict(model_state_dict_from_checkpoint(checkpoint), strict=True)
 
 
 

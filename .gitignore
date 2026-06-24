@@ -20,5 +20,8 @@ artifacts/
 .vscode/
 .DS_Store
 
+# Experiment tooling outputs
+catboost_info/
+
 train_target_indices.json
 test_target_indices.json

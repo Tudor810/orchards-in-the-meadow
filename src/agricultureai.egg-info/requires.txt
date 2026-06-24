@@ -5,3 +5,9 @@ torchvision
 torchaudio
 tqdm
 openpyxl>=3.1.5
+
+[dev]
+pytest
+
+[tracking]
+wandb
