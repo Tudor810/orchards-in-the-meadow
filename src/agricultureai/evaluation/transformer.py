@@ -37,10 +37,15 @@ def evaluate_per_class(model, loader, device, id_to_crop, num_classes=4):
 
     with torch.no_grad():
         for batch in tqdm(loader, desc="Evaluating", leave=False):
-            inputs, targets, _ = batch[:3]
+            if len(batch) >= 5:
+                inputs, doy, padding_mask, targets = batch[0], batch[1], batch[2], batch[3]
+                extra = {"doy": doy.to(device), "padding_mask": padding_mask.to(device)}
+            else:
+                inputs, targets = batch[0], batch[1]
+                extra = {}
             inputs = inputs.to(device)
             targets = targets.to(device).long()
-            outputs = model(inputs)
+            outputs = model(inputs, **extra)
             preds = outputs.argmax(dim=1)
 
             for c in range(num_classes):
@@ -70,7 +75,7 @@ def evaluate_per_class(model, loader, device, id_to_crop, num_classes=4):
     print(confusion.cpu().numpy())
 
 
-def main(region: str = "frh04", level: str = "L1C", batch_size: int = 32):
+def main(region: str = "frh04", level: str = "L2A", batch_size: int = 32):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on device: {device}")
     print(torch.__version__)

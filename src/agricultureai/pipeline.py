@@ -196,21 +196,72 @@ class DMOEPipeline(nn.Module):
             return self.l2b_anomaly_gate(grass_x, doy, padding_mask)
         return self.l2b_anomaly_gate(grass_x)
 
+    def _l1_forward(
+        self,
+        x: torch.Tensor,
+        doy: Optional[torch.Tensor],
+        padding_mask: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        # A DOY-aware L1 silently falls back to all-zero DOY when none is given,
+        # which misroutes cereals; require it, as the cache extraction passes it.
+        if getattr(self.l1_model, "use_doy", False):
+            if doy is None:
+                raise ValueError("L1 model uses day-of-year; pass doy (and padding_mask).")
+            return self.l1_model(x, doy=doy, padding_mask=padding_mask)
+        return self.l1_model(x)
+
+    def _l3_distances(self, x: torch.Tensor) -> torch.Tensor:
+        if hasattr(self.l3_protonet, "pseudo_distances"):
+            return self.l3_protonet.pseudo_distances(x)
+        embeddings = self.l3_protonet.embed(x)
+        if self.support_inv_variances is not None:
+            return squared_mahalanobis_distance(
+                embeddings, self.support_prototypes, self.support_inv_variances
+            )
+        return squared_euclidean_distance(embeddings, self.support_prototypes)
+
+    @staticmethod
+    def _mean_over_views(fn, x: torch.Tensor, views: Optional[torch.Tensor]) -> torch.Tensor:
+        """``fn(x)``, or the mean of ``fn`` over resampled ``views`` ``(B, V, T, C)``."""
+        if views is None:
+            return fn(x)
+        b, v = views.shape[:2]
+        return fn(views.reshape(b * v, *views.shape[2:])).view(b, v, -1).mean(dim=1)
+
     @torch.inference_mode()
     def forward_probs(
         self,
         x: torch.Tensor,
         doy: Optional[torch.Tensor] = None,
         padding_mask: Optional[torch.Tensor] = None,
+        expert_views: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        """Joint 9-class probabilities.
+
+        ``x`` / ``doy`` / ``padding_mask`` are the zero-padded series L1, L2b and
+        L2c were trained on. L2a and L3 were trained through the stock
+        BreizhCrops transform (fixed-length resampling, no padding); pass
+        ``expert_views`` ``(B, V, T, C)`` with resampled views of each parcel and
+        their logits / distances are averaged over the V views. Without it they
+        see ``x`` (legacy behaviour).
+        """
         if x.dim() != 3:
             raise ValueError(f"Expected (B, T, C) input; got shape {tuple(x.shape)}")
+        if expert_views is not None and (
+            expert_views.dim() != 4
+            or expert_views.size(0) != x.size(0)
+            or expert_views.size(-1) != x.size(-1)
+        ):
+            raise ValueError(
+                f"expert_views must be (B, V, T, C) matching x {tuple(x.shape)}; "
+                f"got {tuple(expert_views.shape)}"
+            )
 
         batch_size = x.size(0)
         self.last_l3_count = 0
         probs = x.new_zeros((batch_size, NUM_GLOBAL_CLASSES))
 
-        l1_logits = self.l1_model(x)
+        l1_logits = self._l1_forward(x, doy, padding_mask)
         l1_probs = torch.softmax(l1_logits / self.t1, dim=1)
         p_cereal = l1_probs[:, SUPER_CEREAL_GROUP]
         p_grass = l1_probs[:, SUPER_GRASSLAND_GROUP]
@@ -222,7 +273,11 @@ class DMOEPipeline(nn.Module):
         run_l2a = p_cereal > self.tau_route
         if bool(run_l2a.any()):
             cereal_rows = run_l2a.nonzero(as_tuple=True)[0]
-            cereal_logits = self.l2a_cereal(x[run_l2a])
+            cereal_logits = self._mean_over_views(
+                self.l2a_cereal,
+                x[run_l2a],
+                expert_views[run_l2a] if expert_views is not None else None,
+            )
             cereal_probs = torch.softmax(cereal_logits, dim=1)
             cereal_joint = cereal_probs * p_cereal[run_l2a].unsqueeze(1)
             probs[
@@ -237,6 +292,7 @@ class DMOEPipeline(nn.Module):
             grass_x = x[run_l2b]
             grass_doy = doy[run_l2b] if doy is not None else None
             grass_mask = padding_mask[run_l2b] if padding_mask is not None else None
+            grass_views = expert_views[run_l2b] if expert_views is not None else None
 
             gate_logits = self._l2b_forward(grass_x, grass_doy, grass_mask)
             gate_probs = torch.softmax(gate_logits / self.t2b, dim=1)
@@ -267,19 +323,11 @@ class DMOEPipeline(nn.Module):
             run_l3 = anomaly_mass > self.tau_route
             if bool(run_l3.any()):
                 l3_rows = grass_rows[run_l3]
-                embeddings = self.l3_protonet.embed(grass_x[run_l3])
-                if hasattr(self.l3_protonet, "pseudo_distances"):
-                    distances = self.l3_protonet.pseudo_distances(grass_x[run_l3])
-                elif self.support_inv_variances is not None:
-                    distances = squared_mahalanobis_distance(
-                        embeddings,
-                        self.support_prototypes,
-                        self.support_inv_variances,
-                    )
-                else:
-                    distances = squared_euclidean_distance(
-                        embeddings, self.support_prototypes
-                    )
+                distances = self._mean_over_views(
+                    self._l3_distances,
+                    grass_x[run_l3],
+                    grass_views[run_l3] if grass_views is not None else None,
+                )
                 l3_probs = torch.softmax(-distances / self.t3, dim=1)
                 l3_joint = l3_probs * anomaly_mass[run_l3].unsqueeze(1)
                 probs[
@@ -296,8 +344,11 @@ class DMOEPipeline(nn.Module):
         x: torch.Tensor,
         doy: Optional[torch.Tensor] = None,
         padding_mask: Optional[torch.Tensor] = None,
+        expert_views: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        probs = self.forward_probs(x, doy=doy, padding_mask=padding_mask)
+        probs = self.forward_probs(
+            x, doy=doy, padding_mask=padding_mask, expert_views=expert_views
+        )
         log_p = torch.log(probs + 1e-9)
         log_p[:, list(MEADOW_GLOBAL_IDS)] += self.b_meadow
         log_p[:, list(TREE_GLOBAL_IDS)] += self.b_tree

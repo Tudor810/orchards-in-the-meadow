@@ -35,6 +35,7 @@ class ModelTrainer:
         self.eval_set_name = eval_set_name
         self.architecture_config = dict(architecture_config or {})
         self.run_config = dict(run_config or {})
+        self._active_lr_scheduler = None
         self._wandb = None
         self._wandb_run = None
         if track_with_wandb:
@@ -58,7 +59,7 @@ class ModelTrainer:
         self._wandb_run = wandb.init(project=project, name=run_name or None, config=config)
 
     def _checkpoint_payload(self, metadata: dict) -> dict:
-        return build_checkpoint_payload(
+        payload = build_checkpoint_payload(
             self.model,
             architecture_config=self.architecture_config,
             training_metadata={
@@ -68,6 +69,10 @@ class ModelTrainer:
                 "eval_set": self.eval_set_name,
             },
         )
+        payload["optimizer_state_dict"] = self.optimizer.state_dict()
+        if getattr(self, "_active_lr_scheduler", None) is not None:
+            payload["lr_scheduler_state_dict"] = self._active_lr_scheduler.state_dict()
+        return payload
 
     def _save_checkpoint(self, path: str, metadata: dict) -> None:
         torch.save(self._checkpoint_payload(metadata), path)
@@ -83,7 +88,7 @@ class ModelTrainer:
         artifact.add_file(path)
         self._wandb_run.log_artifact(artifact)
 
-    def _filter_and_remap(self, inputs, targets):
+    def _filter_and_remap(self, inputs, targets, extra=None):
         """Isolates target crops and remaps their IDs to 0, 1, 2..."""
         mask = torch.zeros_like(targets, dtype=torch.bool)
         for target_id in self.target_ids:
@@ -91,17 +96,29 @@ class ModelTrainer:
 
         filtered_inputs = inputs[mask]
         filtered_targets = targets[mask]
+        filtered_extra = (
+            {key: value[mask] for key, value in extra.items()} if extra else {}
+        )
 
         remapped_targets = torch.zeros_like(filtered_targets)
         for new_id, original_id in enumerate(self.target_ids):
             remapped_targets[filtered_targets == original_id] = new_id
 
-        return filtered_inputs, remapped_targets
+        return filtered_inputs, remapped_targets, filtered_extra
 
     @staticmethod
-    def _unpack_batch(batch):
-        inputs, targets, _ = batch[:3]
-        return inputs, targets
+    def _split_batch(batch):
+        """Return ``(inputs, forward_kwargs, targets)`` for 3- or 5-tuple batches.
+
+        DOY-aware loaders yield ``(x, doy, padding_mask, labels, ids)`` while the
+        legacy loader yields ``(x, labels, ids)``; the extra tensors are forwarded
+        to models that consume day-of-year and padding masks.
+        """
+        if len(batch) >= 5:
+            inputs, doy, padding_mask, targets = batch[0], batch[1], batch[2], batch[3]
+            return inputs, {"doy": doy, "padding_mask": padding_mask}, targets
+        inputs, targets = batch[0], batch[1]
+        return inputs, {}, targets
 
     def train_epoch(self):
         self.model.train()
@@ -113,15 +130,16 @@ class ModelTrainer:
             if batch_idx % 5 == 0:
                 print(f"  -> Processed batch {batch_idx}/{len(self.train_loader)}")
 
-            inputs, targets = self._unpack_batch(batch)
+            inputs, extra, targets = self._split_batch(batch)
             inputs, targets = inputs.to(self.device), targets.to(self.device)
-            inputs, targets = self._filter_and_remap(inputs, targets)
+            extra = {key: value.to(self.device) for key, value in extra.items()}
+            inputs, targets, extra = self._filter_and_remap(inputs, targets, extra)
 
             if targets.size(0) == 0:
                 continue
 
             self.optimizer.zero_grad()
-            outputs = self.model(inputs)
+            outputs = self.model(inputs, **extra)
             loss = self.criterion(outputs, targets)
             loss.backward()
             self.optimizer.step()
@@ -156,14 +174,15 @@ class ModelTrainer:
                 if batch_idx % 2000 == 0:
                     print(f"  -> Test batch {batch_idx}/{n_test}")
 
-                inputs, targets = self._unpack_batch(batch)
+                inputs, extra, targets = self._split_batch(batch)
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
-                inputs, targets = self._filter_and_remap(inputs, targets)
+                extra = {key: value.to(self.device) for key, value in extra.items()}
+                inputs, targets, extra = self._filter_and_remap(inputs, targets, extra)
 
                 if targets.size(0) == 0:
                     continue
 
-                outputs = self.model(inputs)
+                outputs = self.model(inputs, **extra)
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
@@ -190,18 +209,51 @@ class ModelTrainer:
         ]
         return overall, per_class_acc, confusion.cpu()
 
-    def fit(self, epochs, save_path=None, checkpoint_dir=None, lr_scheduler=None, metrics_csv_path=None):
+    def fit(
+        self,
+        epochs,
+        save_path=None,
+        checkpoint_dir=None,
+        lr_scheduler=None,
+        metrics_csv_path=None,
+        resume_checkpoint=None,
+    ):
         print(f"Starting training for {epochs} epochs on {self.device}...")
         print(f"Targeting specific crop IDs: {self.target_ids}")
+        self._active_lr_scheduler = lr_scheduler
 
         if checkpoint_dir:
             os.makedirs(checkpoint_dir, exist_ok=True)
-            print(f"Per-epoch checkpoints enabled: {checkpoint_dir}")
+            print(f"Checkpoints (latest.pt + best.pt) enabled: {checkpoint_dir}")
 
+        start_epoch = 0
         best_test_acc = -1.0
         best_epoch = 0
+        if resume_checkpoint is not None:
+            meta = resume_checkpoint.get("training_metadata") or {}
+            start_epoch = int(meta.get("epoch", 0))
+            best_test_acc = float(meta.get("val_accuracy", meta.get("best_val_accuracy", -1.0)))
+            best_epoch = int(meta.get("best_epoch", start_epoch))
+            if "optimizer_state_dict" in resume_checkpoint:
+                self.optimizer.load_state_dict(resume_checkpoint["optimizer_state_dict"])
+            if (
+                lr_scheduler is not None
+                and "lr_scheduler_state_dict" in resume_checkpoint
+            ):
+                lr_scheduler.load_state_dict(resume_checkpoint["lr_scheduler_state_dict"])
+            print(
+                f"Resuming at epoch {start_epoch + 1}/{epochs}; "
+                f"previous best={best_test_acc:.2f}%"
+            )
+            if resume_checkpoint is not None:
+                # Keep prior metrics rows when truly resuming.
+                pass
+            elif metrics_csv_path and os.path.isfile(metrics_csv_path):
+                os.remove(metrics_csv_path)
+        elif metrics_csv_path and os.path.isfile(metrics_csv_path):
+            os.remove(metrics_csv_path)
 
-        for epoch in range(epochs):
+        for epoch in range(start_epoch, epochs):
             start_time = time.time()
             train_loss, train_acc = self.train_epoch()
             test_acc = self.evaluate()
@@ -247,7 +299,6 @@ class ModelTrainer:
             )
 
             if checkpoint_dir:
-                epoch_path = os.path.join(checkpoint_dir, f"epoch_{epoch + 1:03d}.pt")
                 latest_path = os.path.join(checkpoint_dir, "latest.pt")
                 metadata = {
                     "epoch": epoch + 1,
@@ -257,9 +308,7 @@ class ModelTrainer:
                     "learning_rate": lr,
                     "epoch_time_seconds": epoch_time,
                 }
-                self._save_checkpoint(epoch_path, metadata)
                 self._save_checkpoint(latest_path, metadata)
-                print(f"  -> Saved checkpoint: {epoch_path}")
 
                 if test_acc > best_test_acc:
                     best_test_acc = test_acc

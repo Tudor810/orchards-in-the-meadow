@@ -1,13 +1,15 @@
 """Append parcel metadata features to cached DMOE logits (row-aligned).
 
-6 columns::
+8 columns::
 
     0: log1p(area_ha)
     1: max NDVI
-    2: centroid latitude (WGS84)
-    3: mean DOY / 366
-    4: std DOY / 366
-    5: DOY at max NDVI / 366
+    2: NDVI amplitude
+    3: centroid latitude (WGS84)
+    4: mean DOY / 366
+    5: std DOY / 366
+    6: DOY at max NDVI / 366
+    7: log1p(number of valid, cloud-free observations)
 """
 
 from __future__ import annotations
@@ -27,44 +29,65 @@ from tqdm import tqdm
 from agricultureai.data.breizhcrops_series import (
     _L1C_ALL_BANDS,
     _L1C_SPECTRAL_BANDS,
+    _L2A_ALL_BANDS,
+    _L2A_SPECTRAL_BANDS,
     doa_values_to_doy,
 )
 from agricultureai.meta_features import METADATA_COLS, METADATA_FEATURE_DIM
 
 _REFLECTANCE_SCALE = 1e-4
-_L1C_SPECTRAL_IDXS = np.array(
-    [_L1C_ALL_BANDS.index(b) for b in _L1C_SPECTRAL_BANDS], dtype=np.int64
-)
-_DOA_IDX = _L1C_ALL_BANDS.index("doa")
-_B4_IDX = _L1C_SPECTRAL_BANDS.index("B4")
-_B8_IDX = _L1C_SPECTRAL_BANDS.index("B8")
 _METRIC_CRS = "EPSG:2154"
 _DOY_SCALE = 366.0
 
 
-def _valid_spectral_and_doy(raw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    spectral = raw[:, _L1C_SPECTRAL_IDXS].astype(np.float32) * _REFLECTANCE_SCALE
-    doa = raw[:, _DOA_IDX]
+def _band_indices(level: str):
+    """Return (spectral_idxs, doa_idx, b4_local, b8_local) for the given level."""
+    level = level.upper()
+    if level == "L1C":
+        all_bands, spectral = _L1C_ALL_BANDS, _L1C_SPECTRAL_BANDS
+    else:
+        all_bands, spectral = _L2A_ALL_BANDS, _L2A_SPECTRAL_BANDS
+    spec_idxs = np.array([all_bands.index(b) for b in spectral], dtype=np.int64)
+    doa_idx = all_bands.index("doa")
+    b4_local = spectral.index("B4")
+    b8_local = spectral.index("B8")
+    return spec_idxs, doa_idx, b4_local, b8_local
+
+
+def _valid_spectral_and_doy(raw: np.ndarray, *, level: str) -> Tuple[np.ndarray, np.ndarray]:
+    spec_idxs, doa_idx, _, _ = _band_indices(level)
+    spectral = raw[:, spec_idxs].astype(np.float32) * _REFLECTANCE_SCALE
+    doa = raw[:, doa_idx]
     valid = ~np.isnan(spectral).any(axis=1) & ~np.isnan(doa)
     return spectral[valid], doa[valid]
 
 
-def ndvi_and_doy_features(raw: np.ndarray) -> Tuple[float, float, float, float]:
-    """Return max_ndvi, mean_doy, std_doy, doy_at_max_ndvi (normalized)."""
-    spectral, doa = _valid_spectral_and_doy(raw)
-    if spectral.size == 0:
-        return 0.0, 0.0, 0.0, 0.0
+def ndvi_and_doy_features(
+    raw: np.ndarray, *, level: str = "L2A"
+) -> Tuple[float, float, float, float, float, float]:
+    """Return (max_ndvi, ndvi_amplitude, mean_doy, std_doy, doy_at_max_ndvi, n_valid).
 
-    red = spectral[:, _B4_IDX]
-    nir = spectral[:, _B8_IDX]
+    ``n_valid`` is the raw count of cloud-free observations; the caller applies
+    ``log1p`` before storing it so the feature scale matches ``log1p_area_ha``.
+    """
+    _, _, b4_local, b8_local = _band_indices(level)
+    spectral, doa = _valid_spectral_and_doy(raw, level=level)
+    if spectral.size == 0:
+        return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+
+    red = spectral[:, b4_local]
+    nir = spectral[:, b8_local]
     ndvi = (nir - red) / (nir + red + 1e-6)
     doy = doa_values_to_doy(doa).astype(np.float32)
 
     max_ndvi = float(np.max(ndvi))
+    min_ndvi = float(np.min(ndvi))
+    ndvi_amplitude = max_ndvi - min_ndvi
     mean_doy = float(doy.mean() / _DOY_SCALE)
     std_doy = float(doy.std() / _DOY_SCALE) if doy.size > 1 else 0.0
     doy_at_peak = float(doy[int(np.argmax(ndvi))] / _DOY_SCALE)
-    return max_ndvi, mean_doy, std_doy, doy_at_peak
+    n_valid = float(spectral.shape[0])
+    return max_ndvi, ndvi_amplitude, mean_doy, std_doy, doy_at_peak, n_valid
 
 
 def _area_lookup_for_region(region: str, level: str) -> dict[int, tuple[float, float]]:
@@ -110,15 +133,19 @@ def extract_metadata_for_region(
             pid = int(row.id)
             log_area, lat = area_lookup.get(pid, (0.0, 0.0))
             rows[out_i, 0] = log_area
-            rows[out_i, 2] = lat
+            rows[out_i, 3] = lat
 
             raw = np.array(h5[row.path])
-            max_ndvi, mean_doy, std_doy, doy_peak = ndvi_and_doy_features(raw)
+            max_ndvi, ndvi_amp, mean_doy, std_doy, doy_peak, n_valid = ndvi_and_doy_features(
+                raw, level=level
+            )
             rows[out_i, 1] = max_ndvi
+            rows[out_i, 2] = ndvi_amp
+            rows[out_i, 7] = float(np.log1p(max(n_valid, 0.0)))
             if use_doy:
-                rows[out_i, 3] = mean_doy
-                rows[out_i, 4] = std_doy
-                rows[out_i, 5] = doy_peak
+                rows[out_i, 4] = mean_doy
+                rows[out_i, 5] = std_doy
+                rows[out_i, 6] = doy_peak
     return rows
 
 
@@ -168,7 +195,7 @@ def patch_cache(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Append parcel metadata to logit caches.")
     parser.add_argument("caches", nargs="*", type=Path)
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--max-samples", type=int, default=0)
     parser.add_argument(
         "--with-area",

@@ -351,7 +351,7 @@ def main():
 
     parser.add_argument("--region", default="frh04")
 
-    parser.add_argument("--level", default="L1C", help="Use L1C for pretrained models (13 features).")
+    parser.add_argument("--level", default="L1C", help="Pretrained BreizhCrops models require L1C (13 features).")
 
     parser.add_argument("--batch-size", type=int, default=8)
 

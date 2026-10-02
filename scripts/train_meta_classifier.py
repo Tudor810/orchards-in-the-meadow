@@ -5,10 +5,10 @@ Regional protocol (default)::
     Train meta-classifier on frh01–frh03 cached logits
     Evaluate on held-out frh04 cached logits
 
-Production feature layout (64-d with metadata)::
+Production feature layout (compact 39-d by default)::
 
-    58-d neural block from cached DMOE / MSResNet / Transformer outputs
-    + 6-d parcel metadata (area, NDVI, lat, DOY)
+    L3 raw + cereal engineered + MSResNet logits + Transformer block + metadata
+    (drops L2b/L2c and near-noise L1/L2a/global_eng/L3_soft)
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ from agricultureai.meta_features import (
     NEURAL_FEATURE_DIM,
     load_feature_matrix,
     orchard_sample_weights,
+    select_feature_layout,
 )
 from agricultureai.pipeline import (
     GLOBAL_ORCHARDS,
@@ -231,13 +232,19 @@ def parse_args() -> argparse.Namespace:
         "--use-metadata",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Append 6-d parcel metadata (default: on).",
+        help="Append 8-d parcel metadata (default: on).",
+    )
+    parser.add_argument(
+        "--layout",
+        default="compact",
+        choices=("compact", "minus_l2b_l2c", "full"),
+        help="Feature layout after loading the full cache (default: compact 39-d).",
     )
     parser.add_argument(
         "--orchard-multiplier",
         type=float,
-        default=25.0,
-        help="Orchard sample-weight multiplier (production best: 25).",
+        default=1.0,
+        help="Orchard sample-weight multiplier (stretch path: 1).",
     )
     return parser.parse_args()
 
@@ -249,11 +256,14 @@ def main() -> None:
     clf = build_classifier(args.classifier, seed=args.seed)
     backend = clf.__class__.__name__
     print(f"Meta-classifier backend: {backend}")
+    print(f"Feature layout: {args.layout}")
 
     if args.cache is not None:
         cache_path = args.cache.resolve()
         print(f"\n[Legacy mode] Loading single cache from {cache_path} ...")
         x, y = load_feature_matrix(cache_path, use_metadata=args.use_metadata)
+        if args.use_metadata:
+            x = select_feature_layout(x, args.layout)
         print(f"Loaded {x.shape[0]:,} samples, {x.shape[1]} features.")
         x_train, x_val, y_train, y_val = stratified_split(
             x, y, test_size=args.test_size, seed=args.seed
@@ -273,17 +283,17 @@ def main() -> None:
     if train_regions:
         print(f"  regions: {train_regions}")
     x_train, y_train = load_feature_matrix(train_path, use_metadata=args.use_metadata)
+    if args.use_metadata:
+        x_train = select_feature_layout(x_train, args.layout)
     print(f"  samples: {len(y_train):,}, features: {x_train.shape[1]}")
 
     print(f"\nLoading eval cache: {eval_path}")
     if eval_regions:
         print(f"  regions: {eval_regions}")
     x_eval, y_eval = load_feature_matrix(eval_path, use_metadata=args.use_metadata)
+    if args.use_metadata:
+        x_eval = select_feature_layout(x_eval, args.layout)
     print(f"  samples: {len(y_eval):,}, features: {x_eval.shape[1]}")
-
-    expected = FULL_FEATURE_DIM if args.use_metadata else NEURAL_FEATURE_DIM
-    if x_train.shape[1] != expected:
-        raise ValueError(f"Expected {expected} features; got {x_train.shape[1]}")
 
     print(
         "\nRegional protocol: train meta-classifier on train cache, "

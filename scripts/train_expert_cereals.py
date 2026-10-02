@@ -92,7 +92,7 @@ def main():
         action="store_true",
         help="Legacy: 80/20 split per train region for val; do not use with --val-regions frh04.",
     )
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-seq-len", type=int, default=DEFAULT_MAX_SEQ_LEN)

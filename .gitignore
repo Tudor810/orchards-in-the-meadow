@@ -5,7 +5,7 @@ __pycache__/
 
 # Data (CRITICAL: BreizhCrops is huge)
 breizhcrops_dataset/
-data/
+/data/
 
 # Training artifacts / checkpoints
 artifacts/

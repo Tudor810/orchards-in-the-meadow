@@ -80,7 +80,7 @@ class BreizhCropsGLTAEExpert(nn.Module):
         self,
         num_classes: int,
         *,
-        input_dim: int = 13,
+        input_dim: int = 10,
         sequencelength: int = 45,
         d_model: int = 128,
         n_heads: int = 8,

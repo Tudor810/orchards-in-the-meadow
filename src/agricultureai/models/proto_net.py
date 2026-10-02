@@ -59,7 +59,7 @@ class TemporalCNNEncoder(nn.Module):
     def __init__(
         self,
         *,
-        in_channels: int = 13,
+        in_channels: int = 10,
         hidden_dim: int = 64,
         kernel_size: int = 5,
         dropout: float = 0.2,
@@ -115,7 +115,7 @@ class GRUEncoder(nn.Module):
     def __init__(
         self,
         *,
-        in_channels: int = 13,
+        in_channels: int = 10,
         hidden_dim: int = 64,
         rnn_hidden: int = 64,
         num_layers: int = 1,
@@ -332,7 +332,7 @@ class PrototypicalNetwork(nn.Module):
     def __init__(
         self,
         *,
-        in_channels: int = 13,
+        in_channels: int = 10,
         hidden_dim: int = 64,
         encoder: str = "cnn",
         dropout: float = 0.2,

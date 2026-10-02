@@ -96,17 +96,20 @@ class MSResNetBinaryTrainer:
         checkpoint_dir: str | None,
         lr_scheduler=None,
         metrics_csv_path: str | None = None,
+        initial_best_val: float = -1.0,
+        epoch_offset: int = 0,
     ) -> None:
-        best_val = -1.0
-        best_epoch = 0
+        best_val = float(initial_best_val)
+        best_epoch = int(epoch_offset) if best_val >= 0 else 0
         if checkpoint_dir:
             os.makedirs(checkpoint_dir, exist_ok=True)
         for epoch in range(epochs):
+            global_epoch = int(epoch_offset) + epoch + 1
             train_loss, train_acc = self.train_epoch()
             val_acc = self.evaluate()
             lr = self.optimizer.param_groups[0]["lr"]
             print(
-                f"Epoch [{epoch + 1}/{epochs}] loss={train_loss:.4f} "
+                f"Epoch [{epoch + 1}/{epochs}] (global {global_epoch}) loss={train_loss:.4f} "
                 f"train_acc={train_acc:.2f}% val_acc={val_acc:.2f}% lr={lr:.2e}"
             )
             if metrics_csv_path:
@@ -117,10 +120,10 @@ class MSResNetBinaryTrainer:
                     w = csv.writer(f)
                     if write_header:
                         w.writerow(["epoch", "train_loss", "train_acc", "val_acc", "eval_set", "lr"])
-                    w.writerow([epoch + 1, train_loss, train_acc, val_acc, self.eval_set_name, lr])
+                    w.writerow([global_epoch, train_loss, train_acc, val_acc, self.eval_set_name, lr])
             if checkpoint_dir:
                 meta = {
-                    "epoch": epoch + 1,
+                    "epoch": global_epoch,
                     "train_loss": train_loss,
                     "train_accuracy": train_acc,
                     "val_accuracy": val_acc,
@@ -129,7 +132,7 @@ class MSResNetBinaryTrainer:
                 torch.save(self._payload(meta), os.path.join(checkpoint_dir, "latest.pt"))
                 if val_acc > best_val:
                     best_val = val_acc
-                    best_epoch = epoch + 1
+                    best_epoch = global_epoch
                     torch.save(
                         self._payload({**meta, "best_epoch": best_epoch}),
                         os.path.join(checkpoint_dir, "best.pt"),
@@ -144,7 +147,7 @@ def main() -> None:
     parser.add_argument("--regions", nargs="+", default=["frh01", "frh02", "frh03"])
     parser.add_argument("--val-regions", nargs="+", default=["frh04"])
     parser.add_argument("--train-region-holdout", action="store_true")
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-seq-len", type=int, default=DEFAULT_MAX_SEQ_LEN)
@@ -201,9 +204,18 @@ def main() -> None:
         use_doy=use_doy,
         device=device,
     )
+    resume_best_val = -1.0
+    resume_epoch_offset = 0
     if args.resume:
         ckpt = load_checkpoint(args.resume, map_location=device)
         model.load_state_dict(model_state_dict_from_checkpoint(ckpt), strict=False)
+        meta = ckpt.get("training_metadata") or {}
+        resume_best_val = float(meta.get("val_accuracy", -1.0))
+        resume_epoch_offset = int(meta.get("epoch", meta.get("best_epoch", 0)) or 0)
+        print(
+            f"Resumed from {args.resume} "
+            f"(epoch={resume_epoch_offset}, val_acc={resume_best_val:.2f}%)"
+        )
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=float(args.lr), weight_decay=float(args.weight_decay))
@@ -216,6 +228,8 @@ def main() -> None:
         "epochs": int(args.epochs),
         "batch_size": int(args.batch_size),
         "class_names": L2C_ID_TO_NAME,
+        "resume": args.resume or None,
+        "resume_epoch_offset": resume_epoch_offset,
     }
     trainer = MSResNetBinaryTrainer(
         model,
@@ -234,6 +248,8 @@ def main() -> None:
         checkpoint_dir=args.checkpoint_dir,
         lr_scheduler=scheduler,
         metrics_csv_path=metrics_csv,
+        initial_best_val=resume_best_val,
+        epoch_offset=resume_epoch_offset,
     )
 
 

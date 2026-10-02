@@ -102,7 +102,7 @@ class ParcelLTAEClassifier(nn.Module):
       self,
       num_classes: int,
       *,
-      input_dim: int = 13,
+      input_dim: int = 10,
       len_max_seq: int = 45,
       n_head: int = 16,
       d_k: int = 8,

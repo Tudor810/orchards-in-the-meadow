@@ -15,6 +15,7 @@ from agricultureai.meta_features import (
     feature_dims,
     fit_xgb,
     format_metrics,
+    load_cache_payload,
     load_feature_matrix,
     orchard_sample_weights,
     predict_xgb,
@@ -53,7 +54,7 @@ def main() -> None:
     multipliers = parse_multipliers(args.multipliers)
     np.random.seed(args.seed)
 
-    _, full_dim = feature_dims(use_metadata=True)
+    _, full_dim = feature_dims(use_metadata=True, payload=load_cache_payload(args.train_cache))
 
     print(f"Loading {full_dim}-d features (area + NDVI + lat + DOY) ...")
     x_train, y_train = load_feature_matrix(args.train_cache, use_metadata=True)

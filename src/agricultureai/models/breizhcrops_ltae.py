@@ -64,7 +64,7 @@ def _build_fresh_ltae(
     *,
     num_classes: int,
     sequencelength: int,
-    input_dim: int = 13,
+    input_dim: int = 10,
 ) -> Tuple[torch.nn.Module, str]:
     ltae_cls = _import_breizhcrops_ltae_class()
     if ltae_cls is not None:

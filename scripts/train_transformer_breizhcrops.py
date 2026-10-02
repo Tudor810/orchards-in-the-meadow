@@ -28,7 +28,7 @@ def main():
         action="store_true",
         help="Legacy: 80/20 split per train region for val; do not use with --val-regions frh04.",
     )
-    parser.add_argument("--level", default="L1C", help="Use L1C (13 features) to match the pretrained Transformer.")
+    parser.add_argument("--level", default="L2A", help="L2A (10 features, cloud-filtered) or L1C (13 features).")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--max-seq-len", type=int, default=DEFAULT_MAX_SEQ_LEN)
@@ -44,6 +44,11 @@ def main():
         action="store_true",
         help="Random Transformer init instead of bzh.models.pretrained('Transformer').",
     )
+    parser.add_argument(
+        "--use-doy",
+        action="store_true",
+        help="Inject day-of-year embeddings and mask padded steps (native L2A path).",
+    )
     parser.add_argument("--target-ids", nargs="+", type=int, default=[0, 1, 2, 3])
     parser.add_argument(
         "--max-samples",
@@ -54,9 +59,9 @@ def main():
     parser.add_argument(
         "--checkpoint-dir",
         default="artifacts/checkpoints/transformer",
-        help="Directory for epoch_###.pt, latest.pt, best.pt, train_metrics.csv.",
+        help="Directory for latest.pt, best.pt, train_metrics.csv.",
     )
-    parser.add_argument("--no-checkpoints", action="store_true", help="Disable per-epoch checkpoint writes.")
+    parser.add_argument("--no-checkpoints", action="store_true", help="Disable checkpoint writes.")
     parser.add_argument(
         "--final-save",
         default="",
@@ -109,21 +114,34 @@ def main():
         batch_size=args.batch_size,
         max_seq_len=args.max_seq_len,
         use_train_region_holdout=use_holdout,
+        use_doy=args.use_doy,
     )
     eval_set_name = "+".join(val_regions) if val_regions else "train_holdout"
     print(f"Train regions: {args.regions}  |  Val: {eval_set_name}")
 
     num_classes = len(args.target_ids)
+    channels = 13 if args.level == "L1C" else 10
     freeze_backbone = not args.no_freeze_backbone
+    # The L1C pretrained backbone expects 13 channels; native L2A (10-ch) with
+    # DOY embeddings must start from a random init.
+    use_pretrained = not args.from_scratch and channels == 13
+    if not args.from_scratch and not use_pretrained:
+        print("L2A has 10 channels; disabling incompatible L1C pretrained weights.")
     model = BreizhCropsTransformerClassifier(
         num_classes=num_classes,
+        input_dim=channels,
         freeze_backbone=freeze_backbone,
-        pretrained=not args.from_scratch,
+        pretrained=use_pretrained,
+        use_doy=args.use_doy,
         device=device,
     )
-    print(f"Backbone frozen: {freeze_backbone}  |  Pretrained init: {not args.from_scratch}")
+    print(
+        f"Backbone frozen: {freeze_backbone}  |  Pretrained init: {use_pretrained}  "
+        f"|  DOY: {args.use_doy}"
+    )
 
     init_path = (args.init_weights or "").strip()
+    resume_checkpoint = None
     if not init_path and args.resume_best:
         init_path = os.path.join(os.path.abspath(args.checkpoint_dir), "best.pt")
     if init_path:
@@ -131,6 +149,8 @@ def main():
             raise SystemExit(f"Init weights not found: {init_path}")
         checkpoint = load_checkpoint(init_path, map_location=device)
         model.load_state_dict(model_state_dict_from_checkpoint(checkpoint), strict=True)
+        if args.resume_best and not args.init_weights:
+            resume_checkpoint = checkpoint
         print(f"Loaded initial weights from {init_path}")
 
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=float(args.label_smoothing))
@@ -146,12 +166,13 @@ def main():
     architecture_config = {
         "model_type": "transformer",
         "expert": "level1_router",
-        "input_dim": 13,
-        "channels": 13,
+        "input_dim": channels,
+        "channels": channels,
         "seq_len": int(args.max_seq_len),
         "num_classes": num_classes,
         "freeze_backbone": freeze_backbone,
-        "pretrained": not args.from_scratch,
+        "pretrained": use_pretrained,
+        "use_doy": bool(args.use_doy),
         "level": args.level,
         "target_ids": list(args.target_ids),
     }
@@ -192,6 +213,7 @@ def main():
         checkpoint_dir=ckpt_dir,
         lr_scheduler=lr_scheduler,
         metrics_csv_path=metrics_csv,
+        resume_checkpoint=resume_checkpoint,
     )
 
     if ckpt_dir and not args.eval_last_epoch:

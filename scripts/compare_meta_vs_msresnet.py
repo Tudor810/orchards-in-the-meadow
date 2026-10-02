@@ -137,7 +137,7 @@ def print_comparison(msresnet: dict, meta: dict, *, meta_label: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compare DMOE meta vs MSResNet per class on frh04.")
     parser.add_argument("--region", default="frh04")
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--train-cache", type=Path, default=tmc.DEFAULT_TRAIN_CACHE)
     parser.add_argument("--eval-cache", type=Path, default=tmc.DEFAULT_EVAL_CACHE)

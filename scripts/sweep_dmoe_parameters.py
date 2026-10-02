@@ -168,7 +168,7 @@ def extract_cached_logits(
         doy = doy.to(device, non_blocking=True)
         padding_mask = padding_mask.to(device, non_blocking=True)
 
-        l1_chunks.append(l1(x).float().cpu())
+        l1_chunks.append(l1(x, doy=doy, padding_mask=padding_mask).float().cpu())
         l2a_chunks.append(l2a(x).float().cpu())
         l2b_chunks.append(l2b(x, doy, padding_mask).float().cpu())
         l2c_chunks.append(l2c(x, doy, padding_mask).float().cpu())
@@ -541,7 +541,7 @@ def main() -> None:
             "final test region to avoid tuning on the test set."
         ),
     )
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--max-seq-len", type=int, default=MAX_SEQ_LEN)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-samples", type=int, default=0)

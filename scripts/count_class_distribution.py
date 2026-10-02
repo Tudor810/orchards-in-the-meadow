@@ -34,7 +34,7 @@ def count_labels(dataset, num_classes: int = 9):
 
 def main():
     parser = argparse.ArgumentParser(description="Count label distribution in BreizhCrops regions.")
-    parser.add_argument("--level", default="L1C", help="Dataset level (e.g. L1C or L2A).")
+    parser.add_argument("--level", default="L2A", help="Dataset level (e.g. L1C or L2A).")
     parser.add_argument("--regions", nargs="+", default=["frh01", "frh02", "frh03"])
     parser.add_argument("--retries", type=int, default=3, help="Retries for interrupted downloads.")
     parser.add_argument("--retry-sleep", type=int, default=20, help="Seconds to wait between retries.")

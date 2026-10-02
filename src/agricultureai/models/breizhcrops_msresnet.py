@@ -25,7 +25,7 @@ class BreizhCropsMSResNetExpert(nn.Module):
         self,
         *,
         num_classes: int = 2,
-        input_dim: int = 13,
+        input_dim: int = 10,
         hidden_dims: int = 32,
         pretrained: bool = True,
         use_doy: bool = False,

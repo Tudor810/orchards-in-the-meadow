@@ -16,12 +16,13 @@ Classify **9 BreizhCrops classes** on held-out region `frh04`:
 | 7–8 | Permanent / Temporary meadows |
 
 **Train regions:** `frh01`, `frh02`, `frh03`  
-**Eval region:** `frh04` (122,614 parcels)  
-**Spectral level:** `L1C` (13 channels, max sequence length 45)
+**Eval region:** `frh04` (122,708 parcels at L2A)  
+**Spectral level:** `L2A` (10 channels, cloud-filtered; max sequence length 45)  
+Previous L1C (13 channels) checkpoints are backed up in `artifacts/L1C_backup/`.
 
-The main challenge is **orchards** (553 eval samples): MSResNet baseline reaches ~80.8% global
-accuracy but only ~16% orchard recall. The meta-classifier raises orchard recall to ~36% at
-similar global accuracy.
+The main challenge is **orchards** (552 eval parcels): MSResNet baseline reaches ~80.8% global
+accuracy but only ~16% orchard recall. The meta-classifier reaches 37–57% orchard recall at
+80.7–81.9% global accuracy, depending on the operating point (see Results).
 
 ## Architecture
 
@@ -31,11 +32,18 @@ x (B,T,C) → L1 Transformer router (4 super-classes)
   ├─ Cereals → L2a LTAE → {barley, wheat}
   └─ Grasslands → L2b GL-TAE anomaly gate
         ├─ Grass → L2c MSResNet → {permanent, temporary meadows}
-        └─ Anomaly → L3 linear head → {sunflower, orchards, nuts} + meadow rejection
+        └─ Anomaly → L3 ProtoNet (Mahalanobis) → {sunflower, orchards, nuts} + meadow rejection
 ```
 
-Meta-classifier (64-dim: 58 neural + 6 parcel metadata) replaces the hand-crafted probability
-cascade for final predictions.
+The meta-classifier replaces the hand-crafted probability cascade for final predictions:
+compact 39-d features (L3 distances, cereal features, MSResNet logits, Transformer block,
+8 parcel-metadata features), an XGBoost + CatBoost blend, and decode-time orchard / meadow
+log-biases that pick the operating point.
+
+L2a, L3 and the pretrained MSResNet / Transformer were trained on the stock BreizhCrops
+transform (every parcel resampled to 45 dates, never zero-padded); their cached outputs are
+computed from 8 seeded resampled views (`patch_l2a_features.py`, `patch_l3_distances.py`,
+`patch_global_logits.py`), not from zero-padded series.
 
 Implementation: `src/agricultureai/pipeline.py` (`DMOEPipeline`).
 
@@ -117,15 +125,72 @@ python main.py   # quick Transformer baseline on frh04
 | `count_class_distribution.py` | Label counts per region |
 | `generate_full_presentation.py` | Build PowerPoint summary |
 
-## Results (frh04, production config)
+## Results (frh04, held out)
 
-| Model | Global acc | Orchard recall | Wheat recall |
-| --- | --- | --- | --- |
-| MSResNet baseline | 80.77% | 15.73% | 97.58% |
-| DMOE cascade only | ~75–78% | ~34% | ~81% |
-| **Meta @ m=25 (64-d)** | **80.76%** | **35.80%** | **97.57%** |
+Decode settings (blend, orchard multiplier `m`, orchard / meadow biases) are chosen out of
+sample: frh04 is cut into 10 km spatial blocks grouped into 5 folds, and each fold is scored
+with the settings a fixed rule picks on the other four (`scripts/evaluate_meta_protocol.py`).
+Meta rows are means over 3 training seeds; brackets are 95% spatial block-bootstrap
+intervals (seed 42).
 
-Targets in code: accuracy > 80.69%, orchard recall > 35%.
+| Model | Global acc | Orchard recall | Orchard precision | Wheat recall |
+| --- | --- | --- | --- | --- |
+| MSResNet baseline (L1C, stock transform) * | 80.77% | 15.73% | – | 97.58% |
+| DMOE cascade only (no meta-classifier) | 79.65% | 21.74% | 5.73% | 97.37% |
+| Previous best: XGB @ m=25, 64-d (L1C, chosen on frh04) * | 80.76% | 35.80% | – | 97.57% |
+| **Meta, accuracy-first** | **81.87%** [81.10, 82.77] | **36.9%** [31.7, 42.8] | 14.5% | 98.01% |
+| **Meta, orchard-first** | **80.72%** [79.83, 81.60] | **56.9%** [53.1, 62.8] | 7.6% | 97.99% |
+| Meta, closest to stretch | 80.47% [79.63, 81.46] | 60.0% [55.5, 65.1] | 7.0% | 98.00% |
+
+\* L1C evaluation set (122,614 parcels, 553 orchards); not paired with the L2A rows.
+Rules: accuracy-first = max accuracy with orchard recall ≥ 35%; orchard-first = max orchard
+recall with accuracy ≥ 80.69%; closest to stretch = smallest shortfall to (81%, 60%).
+Production targets (accuracy > 80.69%, orchard recall > 35%) are met; the stretch target
+(≥ 81% and ≥ 60%) is not. The DMOE cascade row uses `evaluate_dmoe_pipeline.py` defaults.
+
+What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 42 / 1 / 2):
+
+- Re-extracting the MSResNet features from resampled views instead of zero-padded series:
+  +0.50 / +0.42 / +0.36 accuracy (accuracy-first) and +5.3 / +5.1 / +3.6 orchard recall
+  (orchard-first); every 95% interval excludes zero.
+- The same fix for L2a / L3: +8.5 points of cereal accuracy in the cascade, but within seed
+  noise once the meta-classifier is on top. For the Transformer features: no measurable effect.
+- Choosing decode settings on frh04 itself inflated accuracy by at most 0.15 points.
+
+### Feature-layout ablation
+
+`scripts/ablate_meta_layouts.py`: XGBoost only, `m = 1`, no decode bias, 3 seeds (mean ± sd);
+deltas are paired against the compact layout.
+
+| Layout | Features | Accuracy | Orchard recall | Orchard precision | Δ acc | Δ orchard |
+| --- | --- | --- | --- | --- | --- | --- |
+| full | 66 | 81.89 ± 0.03 | 9.2 ± 0.2 | 18.1 | −0.09 | −21.4 |
+| minus L2b + L2c | 60 | 82.02 ± 0.01 | 30.7 ± 0.7 | 18.9 | +0.04 | +0.1 |
+| **compact** | **39** | **81.98 ± 0.05** | **30.6 ± 1.1** | **18.9** | – | – |
+| compact − L3 distances | 34 | 81.96 ± 0.02 | 28.6 ± 1.8 | 17.2 | −0.01 | −2.1 |
+| compact − cereal | 32 | 81.73 ± 0.03 | 29.4 ± 0.4 | 17.7 | −0.25 | −1.2 |
+| compact − MSResNet | 30 | 81.35 ± 0.02 | 29.1 ± 0.9 | 13.6 | −0.63 | −1.6 |
+| compact − Transformer | 29 | 81.85 ± 0.05 | 30.4 ± 0.8 | 16.4 | −0.13 | −0.2 |
+| compact − metadata | 31 | 81.59 ± 0.01 | 34.9 ± 0.3 | 11.9 | −0.39 | +4.3 |
+
+The L2b / L2c features collapse orchard recall (full: 9.2%); the compact layout matches the
+60-d one with 39 features. MSResNet logits are the most valuable block; parcel metadata
+trades 4.3 points of orchard recall for 0.39 points of accuracy.
+
+### Reproducing
+
+```bash
+python scripts/patch_l2a_features.py artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
+python scripts/patch_l3_distances.py --l3-weights artifacts/checkpoints/level3_protonet_l2a_episodic/best.pt \
+  artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
+python scripts/patch_global_logits.py --models msresnet artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
+python scripts/sweep_compact_dual_bias.py --seed 42 --proba-dir artifacts/pruned_proba_cache_main  # repeat per seed
+python scripts/evaluate_meta_protocol.py --arm main=artifacts/pruned_proba_cache_main
+python scripts/ablate_meta_layouts.py --seeds 42,1,2
+```
+
+Each `patch_*` script rewrites a cache in place only after a verified backup, or writes a
+copy with `--output-suffix`.
 
 ## Installation
 

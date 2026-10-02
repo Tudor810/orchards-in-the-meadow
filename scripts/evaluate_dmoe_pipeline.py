@@ -7,6 +7,11 @@ chains everything with ``DMOEPipeline``, streams ``frh04`` through it, and
 reports a global 9-class confusion matrix plus the headline integration
 metrics.
 
+L2a and L3 were trained on the stock BreizhCrops transform (45-step resampling,
+no zero padding). By default (``--expert-sampling tta``) they get 8 seeded
+resampled views per parcel, averaged, and the L3 prototypes are locked from the
+same kind of views; ``legacy`` feeds them the zero-padded series as before.
+
 Example
 -------
     python scripts/evaluate_dmoe_pipeline.py \
@@ -32,13 +37,16 @@ import breizhcrops as bzh
 
 from agricultureai.data.breizhcrops_series import (
     BreizhCropsParcelDataset,
+    BreizhCropsParcelViewsDataset,
     pad_collate_breizhcrops_series,
+    pad_collate_with_views,
 )
 from agricultureai.data.episodic_sampler import (
     LEVEL3_RAW_IDS,
     NUM_LEVEL3_CLASSES,
     Level3FewShotDataset,
     build_reference_support_pool,
+    build_resampled_support_pool,
 )
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN, pad_collate
 from agricultureai.models.breizhcrops_gltae import BreizhCropsGLTAEExpert
@@ -102,11 +110,20 @@ def load_l1_generalist(path: Path, device: torch.device, *, max_seq_len: int) ->
         raise ValueError(
             f"Unsupported L1 model_type={model_type!r}; expected 'transformer'."
         )
+    input_dim = int(_config_value(cfg, "input_dim", cfg.get("channels", 13)))
+    pretrained = bool(_config_value(cfg, "pretrained", input_dim == 13))
+    use_doy = bool(_config_value(cfg, "use_doy", False))
     model = BreizhCropsTransformerClassifier(
-        num_classes=num_classes, freeze_backbone=True, pretrained=True, device=device
+        num_classes=num_classes,
+        input_dim=input_dim,
+        freeze_backbone=True,
+        pretrained=pretrained,
+        use_doy=use_doy,
+        device=device,
     )
     model.load_state_dict(model_state_dict_from_checkpoint(checkpoint), strict=True)
     model.eval()
+    print(f"  input_dim={input_dim} pretrained={pretrained} use_doy={use_doy}")
     return model
 
 
@@ -116,11 +133,14 @@ def load_l2a_cereal(path: Path, device: torch.device, *, max_seq_len: int) -> to
     seq_len = int(_config_value(cfg, "seq_len", max_seq_len))
     pretrained = bool(_config_value(cfg, "pretrained", True))
     model = BreizhCropsLTAEExpert(
-        num_classes=2, sequencelength=seq_len, pretrained=pretrained, device=device
+        num_classes=2,
+        sequencelength=seq_len,
+        pretrained=pretrained,
+        device=device,
     )
     model.load_state_dict(model_state_dict_from_checkpoint(checkpoint), strict=True)
     model.eval()
-    print(f"L2a cereal: LTAE num_classes=2 seq_len={seq_len}")
+    print(f"L2a cereal: LTAE num_classes=2 seq_len={seq_len} pretrained={pretrained}")
     return model
 
 
@@ -390,7 +410,7 @@ def main() -> None:
 
     parser.add_argument("--train-regions", nargs="+", default=["frh01", "frh02", "frh03"])
     parser.add_argument("--val-regions", nargs="+", default=["frh04"])
-    parser.add_argument("--level", default="L1C")
+    parser.add_argument("--level", default="L2A")
     parser.add_argument("--max-seq-len", type=int, default=MAX_SEQ_LEN)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(
@@ -435,6 +455,15 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
+        "--expert-sampling",
+        choices=("tta", "legacy"),
+        default="tta",
+        help="Input for L2a / L3 (trained on the stock BreizhCrops transform): mean over "
+        "--draws seeded 45-step resamples (tta) or the zero-padded series (legacy).",
+    )
+    parser.add_argument("--draws", type=int, default=8, help="Resampled views per parcel for tta.")
+    parser.add_argument("--sampling-seed", type=int, default=0)
+    parser.add_argument(
         "--output",
         default="",
         help="Optional Excel path (default: Results/dmoe_pipeline_<ts>.xlsx).",
@@ -461,9 +490,21 @@ def main() -> None:
         max_samples=int(args.max_samples),
         max_seq_len=args.max_seq_len,
     )
-    support_x, support_y = build_reference_support_pool(
-        proto_dataset, k_shot=args.ref_k_shot, n_way=NUM_LEVEL3_CLASSES, seed=args.seed
-    )
+    tta = args.expert_sampling == "tta"
+    if tta:
+        support_x, support_y = build_resampled_support_pool(
+            proto_dataset,
+            k_shot=args.ref_k_shot,
+            method="tta",
+            draws=args.draws,
+            sampling_seed=args.sampling_seed,
+            seq_len=args.max_seq_len,
+            seed=args.seed,
+        )
+    else:
+        support_x, support_y = build_reference_support_pool(
+            proto_dataset, k_shot=args.ref_k_shot, n_way=NUM_LEVEL3_CLASSES, seed=args.seed
+        )
     support_prototypes, support_inv_variances = l3.prototypes_and_inv_variances_from_support(
         support_x.to(device),
         support_y.to(device),
@@ -508,38 +549,45 @@ def main() -> None:
         indices = list(range(len(ds)))
         if int(args.max_samples) > 0:
             indices = indices[:min(int(args.max_samples), len(indices))]
-        val_parts.append(
-            BreizhCropsParcelDataset(
+        if tta:
+            part = BreizhCropsParcelViewsDataset(
                 ds,
                 indices,
+                method="tta",
+                draws=args.draws,
+                sampling_seed=args.sampling_seed,
                 max_seq_len=args.max_seq_len,
-                train=False,
-                seed=args.seed,
             )
-        )
+        else:
+            part = BreizhCropsParcelDataset(
+                ds, indices, max_seq_len=args.max_seq_len, train=False, seed=args.seed
+            )
+        val_parts.append(part)
     from torch.utils.data import ConcatDataset
 
     val_dataset = ConcatDataset(val_parts)
+    collate = pad_collate_with_views if tta else pad_collate_breizhcrops_series
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        collate_fn=lambda b: pad_collate_breizhcrops_series(
-            b, max_seq_len=args.max_seq_len
-        ),
+        collate_fn=lambda b: collate(b, max_seq_len=args.max_seq_len),
         pin_memory=torch.cuda.is_available(),
     )
 
     # --- Run the pipeline ---------------------------------------------------
+    print(f"L2a / L3 input: {args.expert_sampling}" + (f" ({args.draws} views)" if tta else ""))
     confusion = torch.zeros((NUM_GLOBAL_CLASSES, NUM_GLOBAL_CLASSES), dtype=torch.long)
     l3_total = 0
     with torch.no_grad():
-        for x, doy, padding_mask, targets, _ in tqdm(val_loader, desc="DMOE pipeline inference"):
+        for batch in tqdm(val_loader, desc="DMOE pipeline inference"):
+            x, doy, padding_mask, targets, _ = batch[:5]
+            views = batch[5].to(device, non_blocking=True) if tta else None
             x = x.to(device, non_blocking=True)
             doy = doy.to(device, non_blocking=True)
             padding_mask = padding_mask.to(device, non_blocking=True)
             targets = targets.to(device).long()  # global raw ids 0-8
-            preds = pipeline(x, doy=doy, padding_mask=padding_mask)
+            preds = pipeline(x, doy=doy, padding_mask=padding_mask, expert_views=views)
             l3_total += pipeline.last_l3_count
             for t, p in zip(targets.view(-1), preds.view(-1)):
                 confusion[int(t), int(p)] += 1
@@ -552,7 +600,7 @@ def main() -> None:
         output = str(Path("Results") / f"dmoe_pipeline_{'+'.join(args.val_regions)}_{ts}.xlsx")
     model_name = (
         f"DMOE_4tier_t1{args.t1:.2f}_t2b{args.t2b:.2f}_t2c{args.t2c:.2f}_"
-        f"t3{args.t3:.2f}_tau{args.tau_route:.3f}"
+        f"t3{args.t3:.2f}_tau{args.tau_route:.3f}_{args.expert_sampling}"
     )
     maybe_write_excel(
         confusion,
