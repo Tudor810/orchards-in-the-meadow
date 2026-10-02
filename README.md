@@ -17,12 +17,13 @@ Classify **9 BreizhCrops classes** on held-out region `frh04`:
 
 **Train regions:** `frh01`, `frh02`, `frh03`  
 **Eval region:** `frh04` (122,708 parcels at L2A)  
-**Spectral level:** `L2A` (10 channels, cloud-filtered; max sequence length 45)  
+**Spectral level:** `L2A` (10 channels; max sequence length 45). The series are not
+cloud-free: the `CLD` flag is 1 on about 60% of observations, and those dates are noisy.  
 Previous L1C (13 channels) checkpoints are backed up in `artifacts/L1C_backup/`.
 
 The main challenge is **orchards** (552 eval parcels): MSResNet baseline reaches ~80.8% global
-accuracy but only ~16% orchard recall. The meta-classifier reaches 37–57% orchard recall at
-80.7–81.9% global accuracy, depending on the operating point (see Results).
+accuracy but only ~16% orchard recall. The meta-classifier reaches 46–66% orchard recall at
+80.7–82.0% global accuracy, depending on the operating point (see Results).
 
 ## Architecture
 
@@ -37,8 +38,9 @@ x (B,T,C) → L1 Transformer router (4 super-classes)
 
 The meta-classifier replaces the hand-crafted probability cascade for final predictions:
 compact 39-d features (L3 distances, cereal features, MSResNet logits, Transformer block,
-8 parcel-metadata features), an XGBoost + CatBoost blend, and decode-time orchard / meadow
-log-biases that pick the operating point.
+8 parcel-metadata features) plus 15 phenology features from clear dates
+(`compute_phenology_features.py`), an XGBoost + CatBoost blend, and decode-time orchard /
+meadow log-biases that pick the operating point.
 
 L2a, L3 and the pretrained MSResNet / Transformer were trained on the stock BreizhCrops
 transform (every parcel resampled to 45 dates, never zero-padded); their cached outputs are
@@ -138,24 +140,57 @@ intervals (seed 42).
 | MSResNet baseline (L1C, stock transform) * | 80.77% | 15.73% | – | 97.58% |
 | DMOE cascade only (no meta-classifier) | 79.65% | 21.74% | 5.73% | 97.37% |
 | Previous best: XGB @ m=25, 64-d (L1C, chosen on frh04) * | 80.76% | 35.80% | – | 97.57% |
-| **Meta, accuracy-first** | **81.87%** [81.10, 82.77] | **36.9%** [31.7, 42.8] | 14.5% | 98.01% |
-| **Meta, orchard-first** | **80.72%** [79.83, 81.60] | **56.9%** [53.1, 62.8] | 7.6% | 97.99% |
-| Meta, closest to stretch | 80.47% [79.63, 81.46] | 60.0% [55.5, 65.1] | 7.0% | 98.00% |
+| **Meta, accuracy-first** | **82.01%** [81.15, 82.82] | **45.5%** [40.9, 51.8] | 15.3% | 98.07% |
+| **Meta, orchard-first** | **80.74%** [79.77, 81.61] | **66.1%** [61.2, 71.6] | 8.0% | 98.02% |
+| **Meta, closest to stretch** | **81.23%** [80.29, 82.05] | **61.0%** [56.8, 66.9] | 9.7% | 98.03% |
 
 \* L1C evaluation set (122,614 parcels, 553 orchards); not paired with the L2A rows.
 Rules: accuracy-first = max accuracy with orchard recall ≥ 35%; orchard-first = max orchard
 recall with accuracy ≥ 80.69%; closest to stretch = smallest shortfall to (81%, 60%).
-Production targets (accuracy > 80.69%, orchard recall > 35%) are met; the stretch target
-(≥ 81% and ≥ 60%) is not. The DMOE cascade row uses `evaluate_dmoe_pipeline.py` defaults.
+Production targets (accuracy > 80.69%, orchard recall > 35%) are met. The stretch target
+(≥ 81% and ≥ 60%) is met by the point estimate on every seed (81.15 / 61.8, 81.30 / 60.7,
+81.25 / 60.5), though the intervals still reach below it. The DMOE cascade row uses
+`evaluate_dmoe_pipeline.py` defaults.
 
 What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 42 / 1 / 2):
 
+- Phenology features (below): +9.1 / +8.5 / +8.3 orchard recall (accuracy-first),
+  +8.5 / +10.3 / +8.9 (orchard-first) and +0.62 / +0.92 / +0.76 accuracy (closest to
+  stretch); orchard average precision 22 → 26.5. Every orchard-recall interval excludes zero.
 - Re-extracting the MSResNet features from resampled views instead of zero-padded series:
   +0.50 / +0.42 / +0.36 accuracy (accuracy-first) and +5.3 / +5.1 / +3.6 orchard recall
   (orchard-first); every 95% interval excludes zero.
 - The same fix for L2a / L3: +8.5 points of cereal accuracy in the cascade, but within seed
   noise once the meta-classifier is on top. For the Transformer features: no measurable effect.
 - Choosing decode settings on frh04 itself inflated accuracy by at most 0.15 points.
+- Stacking leakage (the experts and pretrained models saw frh01–frh03, so the meta-classifier's
+  training features are in-sample): training it instead on frh04's own spatial folds, where
+  every expert feature is out of sample (`train_meta_variants.py --train-on frh04-oof`),
+  changed nothing measurable (seed 42: −0.15 to +0.04 accuracy, all intervals span zero),
+  despite 5× less training data. With phenology features as well, it matches the
+  frh01–frh03-trained model at the orchard-first and stretch points; at the accuracy-first
+  point it lands on a higher-precision trade-off (82.21% accuracy, 37.0% orchard recall,
+  22.3% orchard precision; seed 42).
+
+### Phenology features
+
+96% of false orchards are meadows, so `scripts/compute_phenology_features.py` adds 15
+per-parcel features aimed at that confusion, computed from clear dates only (`CLD == 0`):
+seasonal NDVI means and winter minimum, NDVI spread, summer-minus-winter contrast,
+mowing-like NDVI drops in April–September, spring / summer red-edge (NDRE) and moisture
+(NDMI) means, the number of clear dates, and parcel compactness (4π·area / perimeter²).
+On frh04 the strongest single features separate orchards from meadows like this
+(separability = max(AUROC, 1 − AUROC)):
+
+| Feature | Separability | Direction |
+| --- | --- | --- |
+| spring NDMI | 0.74 | meadows wetter |
+| spring NDVI | 0.72 | meadows greener |
+| spring NDRE | 0.71 | meadows higher |
+| largest NDVI drop (Apr–Sep) | 0.70 | meadows (cuts / grazing) |
+| summer − winter NDVI | 0.69 | orchards gain into summer |
+
+Grass greens up early and is cut; deciduous trees peak later and keep their summer canopy.
 
 ### Feature-layout ablation
 
@@ -184,8 +219,11 @@ python scripts/patch_l2a_features.py artifacts/cached_logits_train.pt artifacts/
 python scripts/patch_l3_distances.py --l3-weights artifacts/checkpoints/level3_protonet_l2a_episodic/best.pt \
   artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
 python scripts/patch_global_logits.py --models msresnet artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
-python scripts/sweep_compact_dual_bias.py --seed 42 --proba-dir artifacts/pruned_proba_cache_main  # repeat per seed
-python scripts/evaluate_meta_protocol.py --arm main=artifacts/pruned_proba_cache_main
+python scripts/compute_phenology_features.py artifacts/cached_logits_train.pt --output artifacts/phenology_train.npz
+python scripts/compute_phenology_features.py artifacts/cached_logits_eval.pt --output artifacts/phenology_eval.npz
+python scripts/train_meta_variants.py --seed 42 --proba-dir artifacts/pruned_proba_cache_pheno \
+  --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz  # repeat per seed
+python scripts/evaluate_meta_protocol.py --arm pheno=artifacts/pruned_proba_cache_pheno
 python scripts/ablate_meta_layouts.py --seeds 42,1,2
 ```
 
