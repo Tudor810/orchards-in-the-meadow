@@ -4,7 +4,7 @@
 orchards and grassland: winter greenness (tree dormancy vs grass), seasonal
 contrast, mowing / grazing (sharp NDVI drops in the growing season), red-edge and
 moisture indices, and parcel shape. Only clear observations are used: the L2A
-``CLD`` flag is 1 on cloudy dates (about 60% of all observations).
+``CLD`` cloud fraction must be 0 (it is above 0 on about 60% of all observations).
 
 Rows follow the cache's parcel order (BreizhCrops index order per region) and
 are written to a separate ``.npz`` (``parcel_ids``, ``labels``, ``features``,
