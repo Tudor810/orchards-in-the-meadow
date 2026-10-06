@@ -16,12 +16,17 @@ Long runs fit in short jobs: training stops before ``--time-budget-min`` would
 be exceeded and resumes from ``<out-dir>/latest.pt`` on the next call. Once all
 epochs are done, ``--export`` writes TTA logits (mean over ``--draws`` views) as
 ``<out-dir>/logits_<split>.npz`` (parcel_ids, labels, features, columns), the
-format ``train_meta_variants.py --extra`` reads.
+format ``train_meta_variants.py --extra`` reads. An L1C store
+(``build_series_store.py --level L1C``, via ``--store-dir``) trains the L1C
+control; its parcels differ slightly from the L2A caches, so export it with
+``--align-cache`` to get the cache's row order.
 
 Example::
 
     python scripts/train_series_classifier.py --dates clear --out-dir artifacts/checkpoints/msresnet_l2a_clear
     python scripts/train_series_classifier.py --dates clear --out-dir artifacts/checkpoints/msresnet_l2a_clear --export eval
+    python scripts/train_series_classifier.py --dates all --store-dir artifacts/series_store_l1c \\
+        --out-dir artifacts/checkpoints/msresnet_l1c_all --export eval --align-cache artifacts/cached_logits_eval.pt
 """
 
 from __future__ import annotations
@@ -37,6 +42,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from agricultureai.cache_alignment import align_logits_by_parcel_id
 from agricultureai.data.breizhcrops_series import resample_indices
 from agricultureai.models.breizhcrops_msresnet import BreizhCropsMSResNetExpert
 
@@ -216,10 +222,22 @@ def export(args) -> None:
     store = SeriesStore([args.store_dir / f"{r}.npz" for r in regions], args.dates)
     t0 = time.time()
     logits = predict(model, store, draws=args.draws, seed=args.seed)
+    print(f"{args.export}: {summarize(logits, store.labels)} TTA{args.draws} ({time.time() - t0:.0f}s)", flush=True)
+    parcel_ids, labels = store.parcel_ids, store.labels
+    if args.align_cache:
+        cache = torch.load(args.align_cache, map_location="cpu", weights_only=True)
+        aligned, matched = align_logits_by_parcel_id(
+            torch.from_numpy(logits), torch.from_numpy(store.labels), torch.from_numpy(store.parcel_ids),
+            cache["parcel_ids"], cache["labels"],
+        )
+        logits = aligned.numpy()
+        logits[~matched.numpy()] = np.nan  # parcel absent from this store: missing, not neutral
+        parcel_ids, labels = cache["parcel_ids"].numpy(), cache["labels"].numpy()
+        print(f"aligned to {args.align_cache}: {int(matched.sum()):,}/{len(matched):,} rows matched", flush=True)
     out = args.out_dir / f"logits_{args.export}.npz"
-    np.savez(out, parcel_ids=store.parcel_ids, labels=store.labels, features=logits,
+    np.savez(out, parcel_ids=parcel_ids, labels=labels, features=logits,
              columns=np.array([f"logit_{c}" for c in range(NUM_CLASSES)]))
-    print(f"{args.export}: {summarize(logits, store.labels)} TTA{args.draws} ({time.time() - t0:.0f}s) -> {out}", flush=True)
+    print(f"-> {out}", flush=True)
 
 
 def vars_for_config(args) -> dict:
@@ -244,6 +262,8 @@ def main() -> None:
     p.add_argument("--draws", type=int, default=8)
     p.add_argument("--bn-samples", type=int, default=60000, help="Parcels for the BatchNorm recalibration pass.")
     p.add_argument("--threads", type=int, default=0, help="Torch CPU threads (0 = default).")
+    p.add_argument("--align-cache", type=Path, default=None,
+                   help="Export rows in this cache's parcel order (NaN where the store lacks a parcel).")
     args = p.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.threads:

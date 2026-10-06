@@ -10,6 +10,7 @@ import numpy as np
 from agricultureai.data.cloud_mask import L2A_B2, L2A_B4, L2A_B8, L2A_CLD, L2A_DOA, clear_observation_mask
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import build_series_store as bss  # noqa: E402
 import train_series_classifier as tsc  # noqa: E402
 
 
@@ -61,3 +62,13 @@ def test_store_uses_clear_dates_and_falls_back_to_all(tmp_path):
     assert x.shape == (3, tsc.SEQ_LEN, tsc.CHANNELS)
     assert set(x[0, :, 0].tolist()) <= {spectral[0, 0], spectral[2, 0]}  # only clear rows 0 and 2
     assert not x[2].any()  # no dates at all -> zeros
+
+
+def test_l1c_rows_keep_the_l2a_bands():
+    raw = np.tile(np.arange(17, dtype=float) * 1000.0, (3, 1))  # value = 1000 x raw column
+    raw[:, 16] = np.datetime64("2017-03-01", "ns").astype(np.int64)  # doa
+    raw[1, 1] = np.nan  # B10 is not kept but still drops the date, as in BreizhCrops
+    spectral, doa, clear = bss.parcel_rows(raw, "L1C")
+    assert spectral.shape == (2, 10) and len(doa) == 2 and not clear.any()
+    l1c_columns = [4, 5, 6, 7, 8, 9, 10, 11, 2, 3]  # B2-B8A, B11, B12 in the raw L1C layout
+    np.testing.assert_allclose(spectral[0], 0.1 * np.array(l1c_columns), rtol=1e-6)

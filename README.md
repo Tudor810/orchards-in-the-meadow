@@ -249,8 +249,31 @@ same accuracy, and the fused model ranks orchards slightly better (AP +1 on ever
 At the selected operating points the two variants are indistinguishable: almost all of the
 meta-classifier gain comes from adding an L2A-trained network at all (all-dates variant:
 82.66 / 48.1 accuracy-first, 80.73 / 77.0 orchard-first, 82.16 / 60.7 closest to stretch).
-Not yet separated: how much of that is the L2A input versus simply a second, independently
-trained network next to the pretrained MSResNet block.
+
+**L1C control: the input, not a second network.** The same MSResNet, trainer, schedule and
+seeds on the same 10 bands at L1C (top-of-atmosphere; `build_series_store.py --level L1C`,
+all dates, logits aligned to the cache rows with `--align-cache`, NaN for the 151 eval
+parcels without an L1C series) gives the meta-classifier almost nothing over phenology alone
+(3 seeds, `artifacts/meta_protocol_l1c_control.log`, `artifacts/l1c_control_eval.log`):
+
+| Extra block | Acc-first acc / orchard | Orchard-first orchard | Acc ≥ 81% orchard | Closest-stretch acc | Orchard AP |
+| --- | --- | --- | --- | --- | --- |
+| none (phenology only) | 82.01 / 45.5 | 66.1 | 63.7 | 81.23 | 26.5 |
+| L1C network | 82.12 / 43.5 | 67.0 | 64.5 | 81.30 | 26.8 |
+| L2A network (all dates) | 82.66 / 48.1 | 77.0 | 74.3 | 82.16 | 33.3 |
+
+L2A minus L1C, paired per seed: +0.49 / +0.55 / +0.58 accuracy (accuracy-first), +10.7 /
++9.1 / +10.3 orchard recall (orchard-first) and +0.87 / +0.82 / +0.89 accuracy (closest to
+stretch); every one of these intervals excludes zero. On its own the L1C network is also
+weaker (−0.66 to −1.11 accuracy, −4.4 to −9.1 orchard recall against the L2A network, all
+intervals excluding zero). So the gain comes from atmospherically corrected input, not from
+ensembling a second network; L1C here also has 2.4× more (cloudier) dates per parcel, which
+is part of what the two levels differ in as distributed.
+
+Note: the raw L1C HDF5 columns are in CSV order (B1, B10, B11, B12, B2 … B8A, B9, QA…, doa),
+not the `SELECTED_BANDS` order the stock BreizhCrops transform indexes with, so the
+pretrained L1C models see their 13 channels permuted (consistently in training and test).
+`build_series_store.py` uses the verified layout.
 
 ### Feature-layout ablation
 
@@ -304,6 +327,9 @@ python scripts/evaluate_meta_protocol.py --pair phenomsclear:pheno \
 
 Replicates pair network seed *s* with meta-classifier seed *s* (`--seed 1`, `--seed 2`,
 `--out-dir ${CK}_seed1`, `--proba-dir ..._seed1`); `--dates all` gives the all-dates control.
+The L1C control: `build_series_store.py <region> --level L1C --output artifacts/series_store_l1c/<region>.npz`,
+then `train_series_classifier.py --dates all --store-dir artifacts/series_store_l1c` and export
+with `--align-cache artifacts/cached_logits_{train,eval}.pt`.
 
 Each `patch_*` script rewrites a cache in place only after a verified backup, or writes a
 copy with `--output-suffix`.
