@@ -48,12 +48,49 @@ from agricultureai.models.breizhcrops_msresnet import BreizhCropsMSResNetExpert
 
 NUM_CLASSES, SEQ_LEN, CHANNELS = 9, 45, 10
 ORCHARD = 5
+INDEX_NAMES = ("NDVI", "WDRVI", "SAVI", "MSAVI", "OSAVI", "EVI", "NDMI", "MSI", "NDRE", "IRECI",
+               "NDI45", "MCARI", "GNDVI", "PPR", "PVR")
+
+
+def _ratio(num: np.ndarray, den: np.ndarray) -> np.ndarray:
+    out = np.zeros_like(num)
+    ok = np.abs(den) > 1e-6
+    np.divide(num, den, out=out, where=ok)
+    return out
+
+
+def vegetation_indices(x: np.ndarray) -> np.ndarray:
+    """15 vegetation indices per date from the 10 L2A bands (B2..B8A, B11, B12; reflectance 0-1).
+
+    Padded dates (all zeros) stay 0; values are clipped to [-10, 10].
+    """
+    b2, b3, b4, b5, b6, b7, b8, _b8a, b11, _b12 = (x[..., i] for i in range(10))
+    disc = np.maximum((2 * b8 + 1) ** 2 - 8 * (b8 - b4), 0.0)
+    idx = np.stack([
+        _ratio(b8 - b4, b8 + b4),                                  # NDVI
+        _ratio(0.1 * b8 - b3, 0.1 * b8 + b3),                      # WDRVI
+        _ratio(1.5 * (b8 - b4), b8 + b4 + 0.5),                    # SAVI
+        (2 * b8 + 1 - np.sqrt(disc)) / 2,                          # MSAVI
+        _ratio(1.16 * (b8 - b4), b8 + b4 + 0.16),                  # OSAVI
+        _ratio(2.5 * (b8 - b4), b8 + 6 * b4 - 7.5 * b2 + 1),       # EVI
+        _ratio(b8 - b11, b8 + b11),                                # NDMI
+        _ratio(b11, b8),                                           # MSI
+        _ratio(b8 - b5, b8 + b5),                                  # NDRE
+        _ratio((b7 - b4) * b6, b5),                                # IRECI
+        _ratio(b5 - b4, b5 + b4),                                  # NDI45
+        _ratio((b6 - b5 - 0.2 * (b6 - b3)) * b6, b5),              # MCARI
+        _ratio(b8 - b3, b8 + b3),                                  # GNDVI
+        _ratio(b3 - b2, b3 + b2),                                  # PPR
+        _ratio(b3 - b4, b3 + b4),                                  # PVR
+    ], axis=-1)
+    return np.clip(idx, -10.0, 10.0).astype(np.float32)
 
 
 class SeriesStore:
     """Ragged parcel series from one or more ``build_series_store.py`` files."""
 
-    def __init__(self, paths: List[Path], dates: str) -> None:
+    def __init__(self, paths: List[Path], dates: str, indices: bool = False) -> None:
+        self.indices = indices
         parts = [np.load(p) for p in paths]
         self.labels = np.concatenate([p["labels"] for p in parts]).astype(np.int64)
         self.parcel_ids = np.concatenate([p["parcel_ids"] for p in parts])
@@ -89,13 +126,16 @@ class SeriesStore:
             if n:
                 sel = self.rows[self.offsets[i] + resample_indices(int(n), SEQ_LEN, method="random", rng=rng)]
                 x[b] = self.spectral[sel]
+        if self.indices:
+            x = np.concatenate([x, vegetation_indices(x)], axis=-1)
         return torch.from_numpy(x)
 
 
-def build_model(seed: int) -> torch.nn.Module:
+def build_model(seed: int, indices: bool = False) -> torch.nn.Module:
     torch.manual_seed(seed)
     return BreizhCropsMSResNetExpert(
-        num_classes=NUM_CLASSES, input_dim=CHANNELS, hidden_dims=32, pretrained=False
+        num_classes=NUM_CLASSES, input_dim=CHANNELS + (len(INDEX_NAMES) if indices else 0),
+        hidden_dims=32, pretrained=False,
     )
 
 
@@ -148,12 +188,12 @@ def summarize(logits: np.ndarray, labels: np.ndarray) -> Dict[str, float]:
 
 
 def train(args) -> None:
-    store = SeriesStore([args.store_dir / f"{r}.npz" for r in args.train_regions], args.dates)
-    monitor = SeriesStore([args.store_dir / f"{r}.npz" for r in args.eval_regions], args.dates)
+    store = SeriesStore([args.store_dir / f"{r}.npz" for r in args.train_regions], args.dates, args.indices)
+    monitor = SeriesStore([args.store_dir / f"{r}.npz" for r in args.eval_regions], args.dates, args.indices)
     print(f"dates={args.dates} train={len(store):,} (median dates {np.median(store.n_dates):.0f}) "
           f"eval={len(monitor):,}", flush=True)
 
-    model = build_model(args.seed)
+    model = build_model(args.seed, args.indices)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda e: 0.5 * (1 + math.cos(math.pi * min(e, args.epochs) / args.epochs))
@@ -216,10 +256,10 @@ def export(args) -> None:
     state = torch.load(args.out_dir / "latest.pt", map_location="cpu", weights_only=False)
     if state["epoch"] < args.epochs or not state.get("bn_recalibrated"):
         raise SystemExit(f"Only {state['epoch']}/{args.epochs} epochs trained; finish training first.")
-    model = build_model(args.seed)
+    model = build_model(args.seed, args.indices)
     model.load_state_dict(state["model"])
     regions = args.train_regions if args.export == "train" else args.eval_regions
-    store = SeriesStore([args.store_dir / f"{r}.npz" for r in regions], args.dates)
+    store = SeriesStore([args.store_dir / f"{r}.npz" for r in regions], args.dates, args.indices)
     t0 = time.time()
     logits = predict(model, store, draws=args.draws, seed=args.seed)
     print(f"{args.export}: {summarize(logits, store.labels)} TTA{args.draws} ({time.time() - t0:.0f}s)", flush=True)
@@ -234,7 +274,7 @@ def export(args) -> None:
         logits[~matched.numpy()] = np.nan  # parcel absent from this store: missing, not neutral
         parcel_ids, labels = cache["parcel_ids"].numpy(), cache["labels"].numpy()
         print(f"aligned to {args.align_cache}: {int(matched.sum()):,}/{len(matched):,} rows matched", flush=True)
-    out = args.out_dir / f"logits_{args.export}.npz"
+    out = args.out_dir / f"logits_{args.export_tag or args.export}.npz"
     np.savez(out, parcel_ids=parcel_ids, labels=labels, features=logits,
              columns=np.array([f"logit_{c}" for c in range(NUM_CLASSES)]))
     print(f"-> {out}", flush=True)
@@ -242,7 +282,10 @@ def export(args) -> None:
 
 def vars_for_config(args) -> dict:
     keys = ("dates", "train_regions", "epochs", "lr", "weight_decay", "batch_size", "seed")
-    return {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in vars(args).items() if k in keys}
+    cfg = {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in vars(args).items() if k in keys}
+    if getattr(args, "indices", False):  # only when set, so earlier checkpoints keep their config
+        cfg["indices"] = True
+    return cfg
 
 
 def main() -> None:
@@ -262,6 +305,9 @@ def main() -> None:
     p.add_argument("--draws", type=int, default=8)
     p.add_argument("--bn-samples", type=int, default=60000, help="Parcels for the BatchNorm recalibration pass.")
     p.add_argument("--threads", type=int, default=0, help="Torch CPU threads (0 = default).")
+    p.add_argument("--export-tag", default="", help="Write logits_<tag>.npz instead of logits_<split>.npz.")
+    p.add_argument("--indices", action="store_true",
+                   help="Append 15 vegetation indices per date to the 10 bands (25 input channels).")
     p.add_argument("--align-cache", type=Path, default=None,
                    help="Export rows in this cache's parcel order (NaN where the store lacks a parcel).")
     args = p.parse_args()

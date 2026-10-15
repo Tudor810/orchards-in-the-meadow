@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import torch
 
 from agricultureai.data.cloud_mask import L2A_B2, L2A_B4, L2A_B8, L2A_CLD, L2A_DOA, clear_observation_mask
 
@@ -72,3 +73,22 @@ def test_l1c_rows_keep_the_l2a_bands():
     assert spectral.shape == (2, 10) and len(doa) == 2 and not clear.any()
     l1c_columns = [4, 5, 6, 7, 8, 9, 10, 11, 2, 3]  # B2-B8A, B11, B12 in the raw L1C layout
     np.testing.assert_allclose(spectral[0], 0.1 * np.array(l1c_columns), rtol=1e-6)
+
+
+def test_vegetation_indices_values_and_padding():
+    x = np.zeros((1, 2, 10), np.float32)  # second date stays padded (all zeros)
+    x[0, 0] = [0.05, 0.08, 0.04, 0.10, 0.25, 0.30, 0.40, 0.42, 0.20, 0.10]  # B2..B8A, B11, B12
+    v = tsc.vegetation_indices(x)
+    assert v.shape == (1, 2, len(tsc.INDEX_NAMES))
+    ndvi, ndmi, msi = (v[0, 0, tsc.INDEX_NAMES.index(n)] for n in ("NDVI", "NDMI", "MSI"))
+    np.testing.assert_allclose([ndvi, ndmi, msi], [(0.40 - 0.04) / 0.44, (0.40 - 0.20) / 0.60, 0.20 / 0.40], rtol=1e-5)
+    assert not v[0, 1].any()  # padded date -> zeros, no NaN or inf
+    assert np.isfinite(v).all()
+
+
+def test_store_batch_appends_indices(tmp_path):
+    path, _ = _store(tmp_path, [np.array([1, 1, 1], bool), np.array([1, 0], bool)])
+    x = tsc.SeriesStore([path], "all", indices=True).batch(np.array([0, 1]), np.random.default_rng(0)).numpy()
+    assert x.shape == (2, tsc.SEQ_LEN, tsc.CHANNELS + len(tsc.INDEX_NAMES))
+    model = tsc.build_model(0, indices=True).eval()
+    assert model(torch.from_numpy(x)).shape == (2, tsc.NUM_CLASSES)

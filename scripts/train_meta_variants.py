@@ -59,9 +59,12 @@ def compact_column_names() -> List[str]:
     return [f"{b}_{i}" for b in COMPACT_BLOCK_NAMES for i in range(len(blocks[b]))]
 
 
-def load_features(cache: Path, extras: List[Tuple[str, Path]]) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+def load_features(cache: Path, extras: List[Tuple[str, Path]], drop_blocks: Tuple[str, ...] = ()) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     x_full, y = load_feature_matrix(cache, use_metadata=True)
     x, names = select_feature_layout(x_full, "compact"), compact_column_names()
+    if drop_blocks:  # ablation: remove whole compact blocks (e.g. the expert outputs)
+        keep = [i for i, n in enumerate(names) if n.rsplit("_", 1)[0] not in drop_blocks]
+        x, names = x[:, keep], [names[i] for i in keep]
     if extras:
         ids = torch.load(cache, map_location="cpu", weights_only=True)["parcel_ids"].numpy()
         for block, path in extras:
@@ -105,9 +108,9 @@ def top_gain(model, names: List[str], k: int = 15) -> List[Tuple[str, float]]:
 def main() -> None:
     args = parse_args()
     extras = [(name, (Path(tr), Path(ev))) for name, tr, ev in args.extra]
-    x_ev, y_ev, names = load_features(args.eval_cache, [(n, p[1]) for n, p in extras])
+    x_ev, y_ev, names = load_features(args.eval_cache, [(n, p[1]) for n, p in extras], args.drop_blocks)
     if args.train_on == "cache":
-        x_tr, y_tr, _ = load_features(args.train_cache, [(n, p[0]) for n, p in extras])
+        x_tr, y_tr, _ = load_features(args.train_cache, [(n, p[0]) for n, p in extras], args.drop_blocks)
     else:
         folds_npz = np.load(args.folds_file)
         ids = torch.load(args.eval_cache, map_location="cpu", weights_only=True)["parcel_ids"].numpy()
@@ -117,7 +120,7 @@ def main() -> None:
     print(f"train-on={args.train_on} seed={args.seed} feats={x_ev.shape[1]} eval={len(y_ev):,}", flush=True)
 
     args.proba_dir.mkdir(parents=True, exist_ok=True)
-    report = {"train_on": args.train_on, "seed": args.seed, "extras": [e[0] for e in extras],
+    report = {"train_on": args.train_on, "seed": args.seed, "extras": [e[0] for e in extras], "drop_blocks": list(args.drop_blocks),
               "n_features": int(x_ev.shape[1]), "multipliers": {}}
     summary = args.proba_dir / "variant.json"
     if summary.is_file():  # one multiplier per run: keep the others' entries
@@ -158,8 +161,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--proba-dir", type=Path, required=True)
     p.add_argument("--force", action="store_true")
+    p.add_argument("--drop-blocks", default="", help="Comma-separated compact blocks to remove (l3_raw, cereal, msresnet, transformer, metadata).")
     args = p.parse_args()
     args.multipliers = [float(v) for v in args.multipliers.split(",") if v.strip()]
+    args.drop_blocks = tuple(b.strip() for b in args.drop_blocks.split(",") if b.strip())
     parsed = []
     for spec in args.extra:
         name, _, paths = spec.partition("=")
