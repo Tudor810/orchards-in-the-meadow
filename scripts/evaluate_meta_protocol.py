@@ -227,8 +227,8 @@ def main() -> None:
     }
 
     # ---- report ---------------------------------------------------------------
-    # The cache's msresnet_logits were extracted from zero-padded input and are
-    # not a valid stand-alone baseline, so only the published references are quoted.
+    # Published references only (different parcels and preprocessing). A paired baseline
+    # on these parcels, from the cache's 8-view MSResNet logits, is compute_model_metrics.py.
     out("\nReferences (L1C eval set, 122,614 parcels; not paired with these rows):")
     out("  MSResNet (stock transform, README):               acc=80.77 orchR=15.73 wheat=97.58")
     out("  README best (XGB m=25, 64-d, selected on frh04):  acc=80.76 orchR=35.80 wheat=97.57")

@@ -8,7 +8,9 @@ Systems (``--models``, default ``baseline,meta,final``):
               phenology, 3-seed L2A network), accuracy-first decode
     final     meta + orchard verifier (FROZEN_DESIGN.md step 4), accuracy-first
               orchard threshold
-    cascade   four-tier DMOE cascade, identity soft routing (intermediate option)
+    cascade   four-tier DMOE cascade decoded from the cached branch outputs, identity
+              soft routing (intermediate option; the live evaluate_dmoe_pipeline.py run
+              with 8-view inputs gives 79.65% / 21.74% orchard recall, 79.66% / 21.20% here)
     l2a_net   3-seed-averaged MSResNet trained on L2A, alone (intermediate option)
 
 ``meta`` and ``final`` are chosen out of sample as in ``evaluate_meta_protocol.py``:

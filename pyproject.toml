@@ -5,16 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agricultureai"
 version = "0.1.0"
-description = "Add your description here"
+description = "Rare-class (orchard) crop mapping on BreizhCrops Sentinel-2 time series"
 requires-python = ">=3.12"
 dependencies = [
     "breizhcrops",
+    "catboost>=1.2",
+    "geopandas>=1.0",
+    "h5py>=3.10",
+    "numpy>=2.0",
     "pandas",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
     "torch",
     "torchvision",
     "torchaudio",
     "tqdm",
     "openpyxl>=3.1.5",
+    "xgboost>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +30,9 @@ dev = [
 ]
 tracking = [
     "wandb",
+]
+presentation = [
+    "python-pptx",
 ]
 
 [tool.setuptools]

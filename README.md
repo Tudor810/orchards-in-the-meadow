@@ -1,8 +1,11 @@
 # AgricultureAi
 
-Hierarchical crop classification on the BreizhCrops Sentinel-2 time-series dataset.
-The production stack is a **4-tier DMOE pipeline** (Dynamic Mixture of Experts) with a
-**late-fusion XGBoost meta-classifier** on cached branch outputs.
+Rare-class (orchard) crop mapping on the BreizhCrops Sentinel-2 time-series dataset.
+The final system (design frozen on 2026-10-09, see `FROZEN_DESIGN.md`) is a **late-fusion
+meta-classifier** (XGBoost + CatBoost) over phenology features, parcel metadata, pretrained
+L1C networks and an MSResNet trained on L2A, followed by a **two-stage orchard verifier**.
+The **4-tier DMOE expert hierarchy** the project started from is kept as code and as an
+ablation; its outputs are not part of the final design.
 
 ## Problem
 
@@ -24,10 +27,27 @@ Previous L1C (13 channels) checkpoints are backed up in `artifacts/L1C_backup/`.
 
 The main challenge is **orchards** (552 eval parcels): an MSResNet trained on these L2A series
 reaches 82.5% global accuracy but only 13–17% orchard recall (the pretrained L1C MSResNet:
-80.8% / 16%). The meta-classifier reaches 50–77% orchard recall at 80.8–82.6% global
-accuracy, depending on the operating point (see Results).
+80.8% / 16%). The final meta-classifier reaches 48.7–77.8% orchard recall at 80.8–82.7%
+global accuracy, depending on the operating point; with the verifier, 45.5% of predicted
+orchards are correct at 82.90% accuracy (see Results).
 
 ## Architecture
+
+Final system:
+
+```
+features (51)
+  ├─ 8 parcel-metadata features
+  ├─ 15 phenology features from clear dates
+  ├─ pretrained BreizhCrops MSResNet + Transformer on L1C (19, 8-view TTA)
+  └─ MSResNet trained on L2A clear dates (9 logits, 8-view TTA, mean of 3 seeds)
+→ meta-classifier: XGBoost + CatBoost, orchard weight m, decode-time log-biases
+→ orchard verifier: parcels above a candidate threshold (keeps 90% of out-of-fold training
+  orchards) re-scored by a binary XGBoost with monthly clear-date means, parcel geometry and
+  neighbour context; orchard above a threshold chosen out of sample, else the meta label
+```
+
+Four-tier expert cascade (the starting point; tested as a feature block and dropped):
 
 ```
 x (B,T,C) → L1 Transformer router (4 super-classes)
@@ -38,21 +58,23 @@ x (B,T,C) → L1 Transformer router (4 super-classes)
         └─ Anomaly → L3 ProtoNet (Mahalanobis) → {sunflower, orchards, nuts} + meadow rejection
 ```
 
-The meta-classifier replaces the hand-crafted probability cascade for final predictions:
-compact 39-d features (L3 distances, cereal features, MSResNet logits, Transformer block,
-8 parcel-metadata features) plus 15 phenology features from clear dates
-(`compute_phenology_features.py`) and the 9 logits of an MSResNet trained on cloud-screened
-L2A dates (`train_series_classifier.py`), an XGBoost + CatBoost blend, and decode-time
-orchard / meadow log-biases that pick the operating point.
+The meta-classifier replaced the hand-crafted probability cascade. It started on the compact
+39-d layout (L3 distances, cereal features, MSResNet logits, Transformer block, 8
+parcel-metadata features); the final design drops the expert blocks (L3 distances, cereal
+features: `train_meta_variants.py --drop-blocks l3_raw,cereal`) and adds 15 phenology
+features from clear dates (`compute_phenology_features.py`) and the 9 logits of an MSResNet
+trained on cloud-screened L2A dates (`train_series_classifier.py`), averaged over three
+network seeds. An XGBoost + CatBoost blend and decode-time orchard / meadow log-biases pick
+the operating point; `orchard_verifier.py` adds the second stage.
 
 L2a, L3 and the pretrained MSResNet / Transformer were trained on the stock BreizhCrops
 transform (every parcel resampled to 45 dates, never zero-padded); their cached outputs are
 computed from 8 seeded resampled views (`patch_l2a_features.py`, `patch_l3_distances.py`,
 `patch_global_logits.py`), not from zero-padded series.
 
-Implementation: `src/agricultureai/pipeline.py` (`DMOEPipeline`).
+The expert cascade is `src/agricultureai/pipeline.py` (`DMOEPipeline`).
 
-## Production workflow
+## Expert-cascade workflow (starting point)
 
 ### 1. Train experts
 
@@ -70,17 +92,16 @@ Checkpoints land in `artifacts/checkpoints/<run_name>/best.pt`.
 ### 2. Build meta-classifier caches
 
 ```bash
-python scripts/sweep_dmoe_parameters.py --extract-only
-python scripts/append_msresnet_logits.py
-python scripts/append_transformer_logits.py
-python scripts/patch_l3_distances.py \
-  --mode linear --linear-weights artifacts/checkpoints/level3_linear_head/best.pt
-python scripts/append_parcel_metadata.py \
-  artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt \
-  --with-area --with-doy
+python scripts/build_meta_caches.py
 ```
 
-Caches: `artifacts/cached_logits_train.pt`, `artifacts/cached_logits_eval.pt`.
+`build_meta_caches.py` extracts the branch outputs (`sweep_dmoe_parameters.py --extract-only`),
+aligns the pretrained L1C MSResNet / Transformer logits by parcel id
+(`append_l1c_cached_global_logits.py`; the pretrained models need 13-band L1C input), patches
+the L3 Mahalanobis distances and appends the 8-d parcel metadata. Then refresh the 8-view
+features as in Reproducing below (`patch_l2a_features.py`, `patch_l3_distances.py`,
+`patch_global_logits.py`). Caches: `artifacts/cached_logits_train.pt`,
+`artifacts/cached_logits_eval.pt`.
 
 ### 3. Train and evaluate meta-classifier
 
@@ -120,13 +141,19 @@ python main.py   # quick Transformer baseline on frh04
 | `sweep_dmoe_parameters.py` | Extract DMOE logits to cache |
 | `append_msresnet_logits.py` | Add MSResNet features to cache |
 | `append_transformer_logits.py` | Add Transformer features to cache |
-| `append_parcel_metadata.py` | Add 6-d parcel metadata to cache |
-| `patch_l3_distances.py` | Refresh L3 distances in cache |
+| `build_meta_caches.py` | Build train / eval caches from the expert checkpoints |
+| `append_parcel_metadata.py` | Add 8-d parcel metadata to cache |
+| `patch_l3_distances.py` | Refresh L3 distances in cache (8-view TTA) |
+| `patch_l2a_features.py`, `patch_global_logits.py` | Recompute L2a / pretrained-network logits from 8 resampled views |
 | `compute_phenology_features.py` | 15 orchard-vs-meadow phenology features |
 | `build_series_store.py` | Pack L2A series + per-date clear-sky flags per region |
 | `train_series_classifier.py` | 9-class MSResNet on all or cloud-screened L2A dates; TTA logit export |
 | `train_meta_variants.py` | Meta-classifier variants with extra feature blocks (`--extra`) |
 | `evaluate_meta_protocol.py` | Out-of-sample decode selection, block bootstrap, paired arms |
+| `orchard_verifier.py` | Two-stage orchard verifier (`oof` / `features` / `verify` stages) |
+| `compute_model_metrics.py` | Confusion matrices and micro / macro P, R, F1: baseline, meta, final |
+| `region_rotation.py` | Pre-registered four-region rotation of the frozen design |
+| `ablate_meta_layouts.py` | Feature-layout ablation |
 | `train_meta_classifier.py` | XGBoost late fusion |
 | `sweep_meta_m_area.py` | Sweep orchard multiplier (production tuning) |
 | `compare_meta_vs_msresnet.py` | Side-by-side per-class metrics |
@@ -152,10 +179,14 @@ brackets are 95% spatial block-bootstrap intervals (seed 42).
 | Meta + phenology, accuracy-first † | 82.01% | 45.5% | 15.3% | 98.07% |
 | Meta + phenology, orchard-first † | 80.74% | 66.1% | 8.0% | 98.02% |
 | Meta + phenology, closest to stretch † | 81.23% | 61.0% | 9.7% | 98.03% |
-| **Meta + phenology + L2A network, accuracy-first** † | **82.63%** [81.85, 83.45] | **49.8%** [43.9, 55.3] | 20.6% | 98.24% |
-| **… orchard-first** † | **80.79%** [80.06, 81.83] | **77.4%** [73.1, 82.0] | 7.7% | 98.22% |
-| **… orchard-first, accuracy ≥ 81%** † | **81.05%** [80.22, 81.95] | **75.2%** [70.6, 80.4] | 8.5% | 98.23% |
-| **… closest to stretch** † | **82.12%** [81.22, 82.91] | **60.1%** [54.3, 64.5] | 13.5% | 98.23% |
+| Meta + phenology + L2A network (with experts, one network), accuracy-first † | 82.63% [81.85, 83.45] | 49.8% [43.9, 55.3] | 20.6% | 98.24% |
+| … orchard-first † | 80.79% [80.06, 81.83] | 77.4% [73.1, 82.0] | 7.7% | 98.22% |
+| … orchard-first, accuracy ≥ 81% † | 81.05% [80.22, 81.95] | 75.2% [70.6, 80.4] | 8.5% | 98.23% |
+| … closest to stretch † | 82.12% [81.22, 82.91] | 60.1% [54.3, 64.5] | 13.5% | 98.23% |
+| **Final design (no experts, 3-seed L2A network), accuracy-first** † | **82.67%** [81.80, 83.46] | **48.7%** [43.0, 54.1] | 21.7% | 98.26% |
+| **… orchard-first** † | **80.78%** [79.84, 81.64] | **77.8%** [73.9, 83.3] | 7.8% | 98.20% |
+| **… closest to stretch** † | **82.18%** [81.33, 83.04] | **60.4%** [54.1, 64.1] | 13.6% | 98.24% |
+| **… + orchard verifier, accuracy-first** † ‡ | **82.90%** | **36.4%** | **45.5%** | 98.26% |
 
 \* L1C evaluation set (122,614 parcels, 553 orchards); not paired with the L2A rows.
 Rules: accuracy-first = max accuracy with orchard recall ≥ 35%; orchard-first = max orchard
@@ -164,10 +195,32 @@ recall with accuracy ≥ 80.69% (or ≥ 81%); closest to stretch = smallest shor
 target (≥ 81% and ≥ 60%) is met by the "accuracy ≥ 81%" row on every seed (81.09 / 75.5,
 81.02 / 74.6, 81.03 / 75.4): orchard recall clears 60% with its whole interval, while
 accuracy sits at the floor by construction (seed 42 interval 80.2–82.0). The DMOE cascade
-row uses `evaluate_dmoe_pipeline.py` defaults. Full logs:
-`artifacts/meta_protocol_cloud_3seeds.log`, `artifacts/max_orchard_at81_3seeds.log`.
+row uses `evaluate_dmoe_pipeline.py` defaults with 8-view inputs (decoding the cached outputs
+instead, as `compute_model_metrics.py --models cascade` does, gives 79.66% / 21.2%). Full logs:
+`artifacts/meta_protocol_cloud_3seeds.log`, `artifacts/max_orchard_at81_3seeds.log`; final
+design: `artifacts/meta_protocol_final.log`. ‡ Verifier decode: orchard where the verifier
+score passes a threshold chosen out of sample, else the meta argmax without orchards
+(`artifacts/orchard_verifier_final/verify_seed*.log`). Paired confusion matrices and micro /
+macro precision, recall and F1 for the baseline, the meta-classifier and the final system:
+`scripts/compute_model_metrics.py` (`artifacts/model_metrics_frh04.log`).
 
 What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 42 / 1 / 2):
+
+- Orchard verifier (`orchard_verifier.py`, on the final meta-classifier): orchard AP
+  34.9 → 39.1 (+4.29 / +3.83 / +4.34, every interval excludes zero); at the accuracy-first
+  point precision 34.8 → 45.5% at the same 36% recall and 82.83 → 82.90% accuracy; at the 81%
+  accuracy floor little change (recall 74.5 → 76.8%). Single feature groups add at most 1.2 AP
+  points (monthly means); only all of them together give the gain.
+- Expert blocks (L3 distances, cereal features): dropping them moves accuracy by at most 0.15
+  points and orchard AP 34.5 → 34.0; accuracy-first orchard recall −2.4 / 0.0 / −3.4
+  (`artifacts/meta_protocol_noexperts.log`). Left out of the final design.
+- Averaging three L2A network seeds (no-experts base): orchard AP 34.0 → 35.3, accuracy-first
+  82.61 → 82.67% and 47.9 → 48.7% orchard recall (`artifacts/meta_protocol_final.log`).
+- The pretrained L1C networks are still needed: without them accuracy-first accuracy falls
+  82.61 → 81.94% and orchard AP 34.0 → 31.4 (`artifacts/meta_protocol_checks245.log`).
+- Vegetation indices as extra L2A-network inputs (`train_series_classifier.py --indices`): no
+  gain (network 82.0–82.2% vs 82.5%; meta accuracy 82.40 vs 82.61%, orchard AP 33.3 vs 34.0;
+  `artifacts/meta_protocol_indices.log`).
 
 - The L2A network block (an MSResNet trained from scratch on frh01–frh03 L2A series,
   cloud-screened dates, 9 TTA logits added to the meta-classifier): +0.68 / +0.67 / +0.52
@@ -334,6 +387,38 @@ with `--align-cache artifacts/cached_logits_{train,eval}.pt`.
 Each `patch_*` script rewrites a cache in place only after a verified backup, or writes a
 copy with `--output-suffix`.
 
+Final design and orchard verifier (`artifacts/checkpoints/msresnet_l2a_clear_ens3/logits_{train,eval}.npz`
+is the element-wise mean of the three seeds' exported logits, same `parcel_ids` / `labels` /
+`columns`):
+
+```bash
+ENS=artifacts/checkpoints/msresnet_l2a_clear_ens3
+V=artifacts/orchard_verifier_final
+for s in 42 1 2; do
+  sfx=$([ $s = 42 ] || echo _seed$s)
+  for m in 1 2 3; do
+    python scripts/train_meta_variants.py --seed $s --multipliers $m --drop-blocks l3_raw,cereal \
+      --proba-dir artifacts/pruned_proba_cache_noexpens$sfx \
+      --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz \
+      --extra msens=$ENS/logits_train.npz,$ENS/logits_eval.npz
+  done
+  for r in frh01 frh02 frh03; do
+    python scripts/orchard_verifier.py oof --region $r --seed $s --work-dir $V \
+      --base-tag noexpens --drop-blocks l3_raw,cereal --net-dir $ENS
+  done
+  python scripts/orchard_verifier.py features --seed $s --work-dir $V --base-tag noexpens
+  python scripts/orchard_verifier.py verify --seed $s --work-dir $V --base-tag noexpens
+done
+A=artifacts/pruned_proba_cache_noexpens
+python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2
+python scripts/compute_model_metrics.py   # confusion matrices, micro / macro P, R, F1
+```
+
+Region rotation (design and checks pre-registered in `FROZEN_DESIGN.md`):
+`artifacts/rotation/run_rotation.sh` runs `scripts/region_rotation.py` (`prep`, then `meta`,
+`oof` and `verify` per test region) and `evaluate_meta_protocol.py` on each region's spatial
+folds; `meta` and `oof` skip outputs that already exist.
+
 ## Installation
 
 ```bash
@@ -364,7 +449,8 @@ python scripts/train_meta_classifier.py
 ├── src/agricultureai/
 │   ├── data/          # loaders, label maps, episodic L3 sampling, cloud mask
 │   ├── evaluation/    # shared eval helpers
-│   ├── meta_features.py  # 64-d feature layout + XGB helpers
+│   ├── meta_features.py  # feature layouts (66-d full, 39-d compact) + XGB / CatBoost helpers
+│   ├── proba_cache.py    # fingerprinted meta-classifier probability caches
 │   ├── models/        # Transformer, LTAE, GL-TAE, MSResNet, ProtoNet
 │   ├── pipeline.py    # DMOEPipeline
 │   └── training/      # trainer, checkpoints, losses
