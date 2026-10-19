@@ -48,3 +48,37 @@ Per fold (test region R, train = the other three), meta seeds 42, 1, 2:
 
 Evaluation per region: 10 km spatial blocks in 5 folds (decode settings chosen out of sample),
 95% block-bootstrap intervals, paired across arms.
+
+## Rotation results (rotation finished 2026-10-15; scored 2026-10-19)
+
+Appended after the fact; nothing above was changed. Logs: `artifacts/rotation/<R>/protocol_{B,ablation}.log`,
+`verify[_seed<s>].json`, `run.log`; AP intervals for checks 1-2 in `artifacts/rotation/rotation_ap_ci.log` (`scripts/rotation_ap_ci.py`)
+(same paired block bootstrap as the verifier: 1000 resamples of the 10 km blocks). Ranges are over the
+three meta seeds; m = 1 grid unless noted.
+
+| Region | Parcels | Orchards | Acc-first acc / orch R / P (B) | Orchard-first acc / R (B) | AP B | AP A | AP D | AP C (verifier) |
+|---|---|---|---|---|---|---|---|---|
+| frh01 | 178,632 | 937 | 83.52 / 51.5 / 22.2 | 80.83 / 80.7 | 40.0 | 26.9 | 36.4 | 39.0 -> 42.5 |
+| frh02 | 140,782 | 348 | 82.72 / 52.6 / 9.2 | 80.93 / 71.3 | 29.4 | 24.2 | 26.1 | 29.3 -> 33.8 |
+| frh03 | 166,367 | 1,217 | 80.13 / 67.2 / 18.3 | (floor not reached) | 43.4 | 28.8 | 37.7 | 42.8 -> 42.4 |
+| frh04 | 122,708 | 552 | 82.40 / 50.9 / 17.8 | 80.77 / 75.2 | 32.5 | 21.3 | 28.7 | 31.9 -> 36.2 |
+
+AP B / A / D = geo_mean blend of arm B / A / D; AP C = verifier on arm B's m = 1 XGBoost score
+(its own baseline on the left of the arrow).
+
+1. **L2A network helps: holds in all four regions.** B - A orchard AP +5.0 to +14.9 (smallest frh02,
+   largest frh03), orchard-first recall +5.7 to +19.9; all 12 intervals of each exclude zero.
+2. **Phenology helps: holds in all four regions.** B - D orchard recall > 0 at both operating points for
+   every region and seed (+0.6 to +7.1); intervals exclude zero in 21 of 24 (exceptions: frh01
+   accuracy-first seed 2, frh02 orchard-first seeds 42 and 2). B - D orchard AP +3.0 to +5.9, all 12
+   intervals exclude zero.
+3. **Verifier helps: holds in frh01, frh02 and frh04, fails in frh03.** C - B orchard AP +3.0 to +4.8 in
+   the three regions (9/9 intervals exclude zero; accuracy-first precision 44 -> 50, 20 -> 32, 28 -> 42).
+   In frh03: -1.1, -0.8, +0.7, every interval spans zero, and accuracy-first precision falls 52 -> 47.
+   frh03 has the most orchards (0.73% of parcels) and the strongest meta score already (AP 42.8).
+4. **Absolute level.** Accuracy-first accuracy 80.1-83.5%, orchard recall 51-67%; orchard precision
+   is lowest where orchards are rarest (9% in frh02, 0.25% of parcels; 18-22% elsewhere). frh03 never reaches
+   the 80.69% accuracy floor (calibrated on frh04), so all three rules pick the default decode there and
+   it has no separate orchard-first point. The rotation-safe variant on frh04 (82.40 / 50.9, AP 32.5) sits
+   below the full design (82.67 / 48.7, AP 35.3), as expected without the pretrained networks and with
+   one L2A seed.

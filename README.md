@@ -5,7 +5,9 @@ The final system (design frozen on 2026-10-09, see `FROZEN_DESIGN.md`) is a **la
 meta-classifier** (XGBoost + CatBoost) over phenology features, parcel metadata, pretrained
 L1C networks and an MSResNet trained on L2A, followed by a **two-stage orchard verifier**.
 The **4-tier DMOE expert hierarchy** the project started from is kept as code and as an
-ablation; its outputs are not part of the final design.
+ablation; its outputs are not part of the final design. A pre-registered four-region
+rotation (see Results) confirms the phenology and L2A-network gains in every region; the
+verifier helps in three of the four regions and is neutral in frh03.
 
 ## Problem
 
@@ -29,7 +31,8 @@ The main challenge is **orchards** (552 eval parcels): an MSResNet trained on th
 reaches 82.5% global accuracy but only 13–17% orchard recall (the pretrained L1C MSResNet:
 80.8% / 16%). The final meta-classifier reaches 48.7–77.8% orchard recall at 80.8–82.7%
 global accuracy, depending on the operating point; with the verifier, 45.5% of predicted
-orchards are correct at 82.90% accuracy (see Results).
+orchards are correct at 82.90% accuracy (see Results). Rotating the test region over all four
+regions gives 80.1–83.5% accuracy at 51–67% orchard recall (accuracy-first).
 
 ## Architecture
 
@@ -153,6 +156,7 @@ python main.py   # quick Transformer baseline on frh04
 | `orchard_verifier.py` | Two-stage orchard verifier (`oof` / `features` / `verify` stages) |
 | `compute_model_metrics.py` | Confusion matrices and micro / macro P, R, F1: baseline, meta, final |
 | `region_rotation.py` | Pre-registered four-region rotation of the frozen design |
+| `rotation_ap_ci.py` | Paired block-bootstrap intervals for the rotation's orchard-AP differences |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
 | `train_meta_classifier.py` | XGBoost late fusion |
 | `sweep_meta_m_area.py` | Sweep orchard multiplier (production tuning) |
@@ -210,7 +214,8 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   34.9 → 39.1 (+4.29 / +3.83 / +4.34, every interval excludes zero); at the accuracy-first
   point precision 34.8 → 45.5% at the same 36% recall and 82.83 → 82.90% accuracy; at the 81%
   accuracy floor little change (recall 74.5 → 76.8%). Single feature groups add at most 1.2 AP
-  points (monthly means); only all of them together give the gain.
+  points (monthly means); only all of them together give the gain. In the region rotation
+  (below) the gain holds in frh01, frh02 and frh04 but not in frh03.
 - Expert blocks (L3 distances, cereal features): dropping them moves accuracy by at most 0.15
   points and orchard AP 34.5 → 34.0; accuracy-first orchard recall −2.4 / 0.0 / −3.4
   (`artifacts/meta_protocol_noexperts.log`). Left out of the final design.
@@ -252,6 +257,41 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   point it lands on a higher-precision trade-off (82.21% accuracy, 37.0% orchard recall,
   22.3% orchard precision; seed 42). The L2A network block is in-sample on frh01–frh03 in
   the same way and has not been re-tested this way.
+
+### Region rotation (pre-registered)
+
+Every design choice above was made on frh04, so the design was frozen and four checks
+written down (`FROZEN_DESIGN.md`) before rotating the test region over all four regions. The
+rotation uses a rotation-safe variant: the pretrained BreizhCrops networks saw frh01–frh03, so
+they are replaced by our own L1C MSResNet trained per fold, and one L2A network seed is used
+per fold. Arms: B = metadata + phenology + L1C net + L2A net; A = B without the L2A net;
+D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
+
+| Test region | Parcels / orchards | Accuracy-first acc / orch. recall / precision (B) | Orchard-first acc / recall (B) | Orchard AP B / A / D | Verifier AP (C − B baseline) |
+| --- | --- | --- | --- | --- | --- |
+| frh01 | 178,632 / 937 | 83.52% / 51.5% / 22.2% | 80.83% / 80.7% | 40.0 / 26.9 / 36.4 | 39.0 → 42.5 |
+| frh02 | 140,782 / 348 | 82.72% / 52.6% / 9.2% | 80.93% / 71.3% | 29.4 / 24.2 / 26.1 | 29.3 → 33.8 |
+| frh03 | 166,367 / 1,217 | 80.13% / 67.2% / 18.3% | floor not reached | 43.4 / 28.8 / 37.7 | 42.8 → 42.4 |
+| frh04 | 122,708 / 552 | 82.40% / 50.9% / 17.8% | 80.77% / 75.2% | 32.5 / 21.3 / 28.7 | 31.9 → 36.2 |
+
+1. **L2A network (B − A): holds in all four regions.** Orchard AP +5.0 to +14.9, orchard-first
+   recall +5.7 to +19.9; all 12 intervals of each exclude zero.
+2. **Phenology (B − D): holds in all four regions.** Orchard recall rises at both operating
+   points for every region and seed (+0.6 to +7.1; 21 of 24 intervals exclude zero); orchard
+   AP +3.0 to +5.9, all intervals exclude zero.
+3. **Verifier (C − B): holds in three regions, fails in frh03.** Orchard AP +3.0 to +4.8 in
+   frh01, frh02 and frh04 (all 9 intervals exclude zero; accuracy-first precision 44 → 50%,
+   20 → 32%, 28 → 42%). In frh03: −1.1 / −0.8 / +0.7, every interval spans zero, and
+   accuracy-first precision falls 52 → 47%. frh03 has the most orchards (0.73% of parcels)
+   and the strongest meta score before the verifier.
+4. **Absolute level:** 80.1–83.5% accuracy at 51–67% orchard recall (accuracy-first).
+   Orchard precision is lowest where orchards are rarest (9% in frh02). frh03 never reaches
+   the 80.69% accuracy floor, so all three selection rules pick the default decode there.
+
+The variant on frh04 sits below the full design (82.40% / 50.9%, AP 32.5 vs 82.67% / 48.7%,
+AP 35.3), as expected without the pretrained networks and with one L2A seed. Logs:
+`artifacts/rotation/<region>/protocol_{B,ablation}.log` and `verify*.json`; AP intervals for
+checks 1–2: `artifacts/rotation/rotation_ap_ci.log`.
 
 ### Phenology features
 
@@ -417,7 +457,9 @@ python scripts/compute_model_metrics.py   # confusion matrices, micro / macro P,
 Region rotation (design and checks pre-registered in `FROZEN_DESIGN.md`):
 `artifacts/rotation/run_rotation.sh` runs `scripts/region_rotation.py` (`prep`, then `meta`,
 `oof` and `verify` per test region) and `evaluate_meta_protocol.py` on each region's spatial
-folds; `meta` and `oof` skip outputs that already exist.
+folds; `meta` and `oof` skip outputs that already exist. Afterwards,
+`python scripts/rotation_ap_ci.py > artifacts/rotation/rotation_ap_ci.log` adds the
+orchard-AP intervals for checks 1–2.
 
 ## Installation
 
