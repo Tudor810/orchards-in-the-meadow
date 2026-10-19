@@ -255,8 +255,13 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   despite 5× less training data. With phenology features as well, it matches the
   frh01–frh03-trained model at the orchard-first and stretch points; at the accuracy-first
   point it lands on a higher-precision trade-off (82.21% accuracy, 37.0% orchard recall,
-  22.3% orchard precision; seed 42). The L2A network block is in-sample on frh01–frh03 in
-  the same way and has not been re-tested this way.
+  22.3% orchard precision; seed 42). Re-tested for the final design (L2A network block
+  included, 3 seeds; `artifacts/meta_protocol_leakage_final.log`): accuracy changes by
+  −0.08 to +0.12 points at all three operating points and orchard AP by −0.7 to −1.0
+  (35.3 → 34.5; `scripts/leakage_ap_ci.py`), every interval spanning zero. At the default
+  decoding the out-of-sample model is only more conservative on orchards (accuracy-first:
+  37.5% recall at 30.7% precision instead of 48.7% at 21.7%; orchard F1 +3.0 to +4.5).
+  In-sample training features do not inflate the reported results.
 
 ### Region rotation (pre-registered)
 
@@ -452,6 +457,19 @@ done
 A=artifacts/pruned_proba_cache_noexpens
 python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2
 python scripts/compute_model_metrics.py   # confusion matrices, micro / macro P, R, F1
+# stacking-leakage test: same arm, meta-classifier cross-fitted on frh04's own folds
+for s in 42 1 2; do
+  sfx=$([ $s = 42 ] || echo _seed$s)
+  python scripts/train_meta_variants.py --train-on frh04-oof --seed $s --drop-blocks l3_raw,cereal \
+    --proba-dir artifacts/pruned_proba_cache_noexpensoof$sfx \
+    --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz \
+    --extra msens=$ENS/logits_train.npz,$ENS/logits_eval.npz
+done
+O=artifacts/pruned_proba_cache_noexpensoof
+python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2 \
+  --arm finaloof=$O,${O}_seed1,${O}_seed2 --pair finaloof:final \
+  --output-log artifacts/meta_protocol_leakage_final.log --output-json artifacts/meta_protocol_leakage_final.json
+python scripts/leakage_ap_ci.py
 ```
 
 Region rotation (design and checks pre-registered in `FROZEN_DESIGN.md`):
