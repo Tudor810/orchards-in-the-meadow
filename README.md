@@ -157,6 +157,8 @@ python main.py   # quick Transformer baseline on frh04
 | `compute_model_metrics.py` | Confusion matrices and micro / macro P, R, F1: baseline, meta, final |
 | `region_rotation.py` | Pre-registered four-region rotation of the frozen design |
 | `rotation_ap_ci.py` | Paired block-bootstrap intervals for the rotation's orchard-AP differences |
+| `diagnose_rotation_verifier.py` | Post-hoc verifier variants in the rotation (candidate share, feature groups) |
+| `leakage_ap_ci.py` | Paired block-bootstrap interval for the stacking-leakage orchard-AP difference |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
 | `train_meta_classifier.py` | XGBoost late fusion |
 | `sweep_meta_m_area.py` | Sweep orchard multiplier (production tuning) |
@@ -288,7 +290,14 @@ D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
    frh01, frh02 and frh04 (all 9 intervals exclude zero; accuracy-first precision 44 → 50%,
    20 → 32%, 28 → 42%). In frh03: −1.1 / −0.8 / +0.7, every interval spans zero, and
    accuracy-first precision falls 52 → 47%. frh03 has the most orchards (0.73% of parcels)
-   and the strongest meta score before the verifier.
+   and the highest meta AP before the verifier, partly because AP rises with prevalence.
+   Post-hoc (`scripts/diagnose_rotation_verifier.py`, `artifacts/rotation/diagnosis.log`;
+   the frozen design is unchanged): frh03 holds 40% of all orchards, so its fold trains on
+   the fewest (1,837 vs 2,117–2,706) and gets the loosest candidate threshold (τ 0.0055 vs
+   0.009–0.019; 18% of parcels become candidates instead of 8–10%). A 9% candidate share in
+   every fold removes the frh03 loss (AP −0.3 to +0.3) and keeps the gain elsewhere (+3.0 to
+   +4.4), but creates no gain in frh03; dropping the neighbour or monthly features does not
+   help either. The threshold is part of the problem, not all of it.
 4. **Absolute level:** 80.1–83.5% accuracy at 51–67% orchard recall (accuracy-first).
    Orchard precision is lowest where orchards are rarest (9% in frh02). frh03 never reaches
    the 80.69% accuracy floor, so all three selection rules pick the default decode there.

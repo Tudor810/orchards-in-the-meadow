@@ -82,3 +82,13 @@ AP B / A / D = geo_mean blend of arm B / A / D; AP C = verifier on arm B's m = 1
    it has no separate orchard-first point. The rotation-safe variant on frh04 (82.40 / 50.9, AP 32.5) sits
    below the full design (82.67 / 48.7, AP 35.3), as expected without the pretrained networks and with
    one L2A seed.
+
+### Post-hoc analysis of check 3 (2026-10-19; does not change the design)
+
+`scripts/diagnose_rotation_verifier.py` (log `artifacts/rotation/diagnosis.log`). frh03 holds 40% of all
+orchards, so its fold trains on the fewest (1,837 vs 2,117-2,706) and gets the loosest candidate threshold
+(tau 0.0055 vs 0.009-0.019; 18% of frh03 parcels become candidates instead of 8-10%). Setting the candidate
+share to 9% in every fold removes the frh03 loss (AP -0.3 to +0.3) and keeps the gain in the other regions
+(+3.0 to +4.4, every interval excluding zero), but creates no gain in frh03 (accuracy-first precision still
+52 -> 47). Dropping the neighbour features (AP -1.8 to -0.2) or the monthly means (-0.8 to -0.1) does not help.
+The threshold explains part of the frh03 shortfall, not all of it.
