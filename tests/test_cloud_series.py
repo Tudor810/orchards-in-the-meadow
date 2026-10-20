@@ -92,3 +92,13 @@ def test_store_batch_appends_indices(tmp_path):
     assert x.shape == (2, tsc.SEQ_LEN, tsc.CHANNELS + len(tsc.INDEX_NAMES))
     model = tsc.build_model(0, indices=True).eval()
     assert model(torch.from_numpy(x)).shape == (2, tsc.NUM_CLASSES)
+
+
+def test_class_weights_modes():
+    labels = np.repeat(np.arange(tsc.NUM_CLASSES), [400, 100, 100, 400, 1, 25, 2, 400, 400])
+    assert tsc.class_weights("none", labels) is None
+    w = tsc.class_weights("orchard", labels, orchard_weight=10.0)
+    assert w[tsc.ORCHARD] == 10.0 and np.allclose(np.delete(w, tsc.ORCHARD), 1.0)
+    w = tsc.class_weights("sqrt_inv", labels, cap=10.0)
+    assert w.max() <= 10.0 and w[0] < w[1] < w[tsc.ORCHARD]  # rarer class, larger weight
+    assert w[4] == 10.0  # one-parcel class hits the cap

@@ -159,6 +159,8 @@ python main.py   # quick Transformer baseline on frh04
 | `rotation_ap_ci.py` | Paired block-bootstrap intervals for the rotation's orchard-AP differences |
 | `diagnose_rotation_verifier.py` | Post-hoc verifier variants in the rotation (candidate share, feature groups) |
 | `leakage_ap_ci.py` | Paired block-bootstrap interval for the stacking-leakage orchard-AP difference |
+| `network_as_arm.py` | A series network's frh04 logits as a protocol arm (same decision dial as the meta-classifier) |
+| `paired_ap_ci.py` | Paired block-bootstrap interval for the orchard-AP difference between any two frh04 arms |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
 | `train_meta_classifier.py` | XGBoost late fusion |
 | `sweep_meta_m_area.py` | Sweep orchard multiplier (production tuning) |
@@ -228,6 +230,16 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
 - Vegetation indices as extra L2A-network inputs (`train_series_classifier.py --indices`): no
   gain (network 82.0–82.2% vs 82.5%; meta accuracy 82.40 vs 82.61%, orchard AP 33.3 vs 34.0;
   `artifacts/meta_protocol_indices.log`).
+- End-to-end alternatives, given the same decision dial (biases and out-of-sample selection;
+  `scripts/network_as_arm.py`, `artifacts/meta_protocol_e2e.log`, `artifacts/e2e/paired_ap_ci.log`):
+  the L2A network alone reaches 82.24% / 37.0% orchard recall at accuracy-first (argmax: 17.2%);
+  trained with a class-weighted loss (`train_series_classifier.py --class-weights orchard` ×10,
+  or `sqrt_inv` capped at 10) 81.69% / 45.4% and 82.01% / 40.6%. Weighting shifts the operating
+  point but not the ranking: orchard AP 25.2–27.7 vs 26.1 unweighted (every interval spans zero),
+  against 35.3 for the final design (+7.5 to +10.2, every interval excludes zero). The final
+  design leads at every operating point: +0.6 to +1.2 accuracy (accuracy-first), +14.5 to +18.5
+  orchard recall (orchard-first: 77.8% vs at most 62%), +1.1 to +1.7 accuracy (closest to
+  stretch). Subtracting the log class weights from the network's logits changes none of this.
 
 - The L2A network block (an MSResNet trained from scratch on frh01–frh03 L2A series,
   cloud-screened dates, 9 TTA logits added to the meta-classifier): +0.68 / +0.67 / +0.52
@@ -479,6 +491,19 @@ python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2 \
   --arm finaloof=$O,${O}_seed1,${O}_seed2 --pair finaloof:final \
   --output-log artifacts/meta_protocol_leakage_final.log --output-json artifacts/meta_protocol_leakage_final.json
 python scripts/leakage_ap_ci.py
+# end-to-end baselines with the same decision dial (unweighted, orchards x10, capped sqrt-inverse)
+for s in 42 1 2; do
+  sfx=$([ $s = 42 ] || echo _seed$s)
+  python scripts/network_as_arm.py artifacts/checkpoints/msresnet_l2a_clear$sfx/logits_eval.npz artifacts/pruned_proba_cache_l2anetdial$sfx
+  for w in "orchw10 --class-weights orchard --orchard-weight 10" "sqrtinv --class-weights sqrt_inv --weight-cap 10"; do
+    set -- $w; n=$1; shift; CKW=artifacts/checkpoints/msresnet_l2a_clear_$n$sfx
+    python scripts/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --time-budget-min 600
+    python scripts/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --export eval --align-cache artifacts/cached_logits_eval.pt
+    python scripts/network_as_arm.py $CKW/logits_eval.npz artifacts/pruned_proba_cache_${n}dial$sfx
+  done
+done
+# then evaluate_meta_protocol.py with --arm final=... --arm l2anetdial=... --arm orchw10dial=... --arm sqrtinvdial=...
+# --pair final:<arm>, and scripts/paired_ap_ci.py artifacts/pruned_proba_cache_noexpens artifacts/pruned_proba_cache_<arm>
 ```
 
 Region rotation (design and checks pre-registered in `FROZEN_DESIGN.md`):

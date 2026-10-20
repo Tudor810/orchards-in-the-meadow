@@ -36,7 +36,7 @@ import json
 import math
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -187,11 +187,30 @@ def summarize(logits: np.ndarray, labels: np.ndarray) -> Dict[str, float]:
     }
 
 
+def class_weights(mode: str, labels: np.ndarray, *, orchard_weight: float = 10.0, cap: float = 10.0) -> Optional[np.ndarray]:
+    """Per-class loss weights: none, orchards up-weighted, or capped square-root inverse frequency."""
+    if mode == "none":
+        return None
+    w = np.ones(NUM_CLASSES)
+    if mode == "orchard":
+        w[ORCHARD] = orchard_weight
+    elif mode == "sqrt_inv":
+        counts = np.bincount(labels, minlength=NUM_CLASSES).astype(np.float64)
+        w = np.minimum(np.sqrt(counts.sum() / (NUM_CLASSES * np.maximum(counts, 1.0))), cap)
+    else:
+        raise ValueError(mode)
+    return w
+
+
 def train(args) -> None:
     store = SeriesStore([args.store_dir / f"{r}.npz" for r in args.train_regions], args.dates, args.indices)
     monitor = SeriesStore([args.store_dir / f"{r}.npz" for r in args.eval_regions], args.dates, args.indices)
     print(f"dates={args.dates} train={len(store):,} (median dates {np.median(store.n_dates):.0f}) "
           f"eval={len(monitor):,}", flush=True)
+    cw = class_weights(args.class_weights, store.labels, orchard_weight=args.orchard_weight, cap=args.weight_cap)
+    weight = None if cw is None else torch.tensor(cw, dtype=torch.float32)
+    if cw is not None:
+        print(f"class weights ({args.class_weights}): {np.round(cw, 2).tolist()}", flush=True)
 
     model = build_model(args.seed, args.indices)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -226,7 +245,7 @@ def train(args) -> None:
             idx = order[start:start + args.batch_size]
             x, y = store.batch(idx, rng), torch.from_numpy(store.labels[idx])
             opt.zero_grad()
-            loss = F.cross_entropy(model(x), y)
+            loss = F.cross_entropy(model(x), y, weight=weight)
             loss.backward()
             opt.step()
             total += loss.item() * len(idx)
@@ -275,8 +294,13 @@ def export(args) -> None:
         parcel_ids, labels = cache["parcel_ids"].numpy(), cache["labels"].numpy()
         print(f"aligned to {args.align_cache}: {int(matched.sum()):,}/{len(matched):,} rows matched", flush=True)
     out = args.out_dir / f"logits_{args.export_tag or args.export}.npz"
+    extra = {}
+    if args.class_weights != "none":  # recorded so the training-weight bias can be removed later
+        train_labels = SeriesStore([args.store_dir / f"{r}.npz" for r in args.train_regions], args.dates, args.indices).labels
+        extra["class_weights"] = class_weights(args.class_weights, train_labels, orchard_weight=args.orchard_weight,
+                                               cap=args.weight_cap)
     np.savez(out, parcel_ids=parcel_ids, labels=labels, features=logits,
-             columns=np.array([f"logit_{c}" for c in range(NUM_CLASSES)]))
+             columns=np.array([f"logit_{c}" for c in range(NUM_CLASSES)]), **extra)
     print(f"-> {out}", flush=True)
 
 
@@ -285,6 +309,10 @@ def vars_for_config(args) -> dict:
     cfg = {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in vars(args).items() if k in keys}
     if getattr(args, "indices", False):  # only when set, so earlier checkpoints keep their config
         cfg["indices"] = True
+    if getattr(args, "class_weights", "none") != "none":
+        cfg["class_weights"] = args.class_weights
+        cfg["orchard_weight" if args.class_weights == "orchard" else "weight_cap"] = (
+            args.orchard_weight if args.class_weights == "orchard" else args.weight_cap)
     return cfg
 
 
@@ -310,6 +338,10 @@ def main() -> None:
                    help="Append 15 vegetation indices per date to the 10 bands (25 input channels).")
     p.add_argument("--align-cache", type=Path, default=None,
                    help="Export rows in this cache's parcel order (NaN where the store lacks a parcel).")
+    p.add_argument("--class-weights", choices=("none", "orchard", "sqrt_inv"), default="none",
+                   help="Weighted cross-entropy: orchards x --orchard-weight, or sqrt inverse frequency capped at --weight-cap.")
+    p.add_argument("--orchard-weight", type=float, default=10.0)
+    p.add_argument("--weight-cap", type=float, default=10.0)
     args = p.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.threads:
