@@ -309,7 +309,7 @@ def load_feature_matrix(
         if "parcel_metadata" not in payload:
             raise KeyError(
                 f"{cache_path} has no parcel_metadata. "
-                "Run scripts/append_parcel_metadata.py first."
+                "Run scripts/cascade/append_parcel_metadata.py first."
             )
         meta = tensor_to_numpy(payload["parcel_metadata"])
         if meta.shape[0] != x.shape[0]:
@@ -359,6 +359,21 @@ def weighted_arithmetic_probs(
     mixed = np.clip(mixed, eps, None)
     mixed /= np.sum(mixed, axis=1, keepdims=True)
     return mixed.astype(np.float32)
+
+
+def make_blend(name: str, p_xgb: np.ndarray, p_cat: np.ndarray) -> np.ndarray:
+    """XGBoost / CatBoost probability blend by name (geo_mean, arith_mean, arith_xgb0.7, xgb_only, cat_only)."""
+    if name == "geo_mean":
+        return geometric_mean_probs(p_xgb, p_cat)
+    if name == "arith_mean":
+        return weighted_arithmetic_probs(p_xgb, p_cat, weight_a=0.5)
+    if name == "arith_xgb0.7":
+        return weighted_arithmetic_probs(p_xgb, p_cat, weight_a=0.7)
+    if name == "xgb_only":
+        return p_xgb
+    if name == "cat_only":
+        return p_cat
+    raise ValueError(f"Unknown blend {name!r}")
 
 
 def apply_class_log_bias(

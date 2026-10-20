@@ -1,9 +1,8 @@
-"""Tests for re-extracting pretrained global-model logits (``scripts/patch_global_logits.py``)."""
+"""Tests for re-extracting pretrained global-model logits (``scripts/cascade/patch_global_logits.py``)."""
 
 from __future__ import annotations
 
 import argparse
-import sys
 import zlib
 from pathlib import Path
 
@@ -15,8 +14,7 @@ import torch
 
 from agricultureai.data.breizhcrops_series import resample_series_views, split_raw_series
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import patch_global_logits as pgl  # noqa: E402
+import patch_global_logits as pgl
 
 L1C_COLUMNS = 17
 

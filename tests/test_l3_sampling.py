@@ -1,9 +1,8 @@
-"""Tests for training-consistent L3 resampling (``scripts/patch_l3_distances.py``)."""
+"""Tests for training-consistent L3 resampling (``scripts/cascade/patch_l3_distances.py``)."""
 
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -21,8 +20,7 @@ from agricultureai.data.episodic_sampler import (
     reference_support_indices,
 )
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import patch_l3_distances as p3  # noqa: E402
+import patch_l3_distances as p3
 
 
 def _series(t: int, c: int = 3) -> np.ndarray:

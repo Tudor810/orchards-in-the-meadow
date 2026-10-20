@@ -1,8 +1,7 @@
-import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+"""Shared helpers for the BreizhCrops Transformer: sequence padding and per-class evaluation."""
 
-import breizhcrops as bzh
+import torch
+from tqdm import tqdm
 
 from agricultureai.data.breizhcrops_super_classes import map_raw_to_super_class
 
@@ -73,42 +72,3 @@ def evaluate_per_class(model, loader, device, id_to_crop, num_classes=4):
 
     print("\nConfusion matrix (rows=true, cols=pred):")
     print(confusion.cpu().numpy())
-
-
-def main(region: str = "frh04", level: str = "L2A", batch_size: int = 32):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Running on device: {device}")
-    print(torch.__version__)
-    print("Loading datasets...")
-
-    # Pretrained BreizhCrops models are trained with 13 input features (level="L1C").
-    # Using level="L2A" yields 10 features and will crash in the first Linear layer.
-    test_dataset = bzh.BreizhCrops(region, level=level)
-
-    id_to_crop = {
-        0: "barley",
-        1: "wheat",
-        2: "rapeseed",
-        3: "corn",
-        4: "sunflower",
-        5: "orchards",
-        6: "nuts",
-        7: "permanent meadows",
-        8: "temporary meadows",
-    }
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        collate_fn=lambda batch: pad_collate(batch, map_to_super_class=False),
-        pin_memory=torch.cuda.is_available(),
-    )
-
-    model = bzh.models.pretrained("Transformer", device=device)
-    evaluate_per_class(model, test_loader, device=device, id_to_crop=id_to_crop, num_classes=9)
-
-
-if __name__ == "__main__":
-    main()
-

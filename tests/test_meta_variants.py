@@ -1,18 +1,15 @@
-"""Tests for the meta-classifier variant trainer and phenology features."""
+"""Tests for the meta-classifier training helpers and phenology features."""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import compute_phenology_features as cpf  # noqa: E402
-import train_meta_variants as tmv  # noqa: E402
+import compute_phenology_features as cpf
 
-from agricultureai.meta_features import COMPACT_FEATURE_DIM  # noqa: E402
+from agricultureai import meta_training as tmv
+from agricultureai.meta_features import COMPACT_FEATURE_DIM
 
 
 def test_compact_column_names_cover_the_compact_layout():

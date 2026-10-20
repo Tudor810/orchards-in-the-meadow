@@ -353,3 +353,66 @@ class DMOEPipeline(nn.Module):
         log_p[:, list(MEADOW_GLOBAL_IDS)] += self.b_meadow
         log_p[:, list(TREE_GLOBAL_IDS)] += self.b_tree
         return log_p.argmax(dim=-1)
+
+# --------------------------------------------------------------------------- #
+# Decoding cached branch outputs (no model forward pass)                      #
+# --------------------------------------------------------------------------- #
+CEREAL_COLS = [CEREAL_LOCAL_TO_GLOBAL[i] for i in range(len(CEREAL_LOCAL_TO_GLOBAL))]
+MEADOW_COLS = list(MEADOW_GLOBAL_IDS)
+L3_COLS = [L3_LOCAL_TO_GLOBAL[i] for i in range(len(L3_LOCAL_TO_GLOBAL))]
+
+
+def decode_predictions(
+    l1_logits: torch.Tensor,
+    l2a_logits: torch.Tensor,
+    l2b_logits: torch.Tensor,
+    l2c_logits: torch.Tensor,
+    l3_distances: torch.Tensor,
+    *,
+    t1: float,
+    t2b: float,
+    t2c: float,
+    t3: float,
+    tau_route: float,
+    b_meadow: float,
+    b_tree: float,
+) -> torch.Tensor:
+    """Vectorized 4-tier DMOEPipeline forward_probs + cost-sensitive decode."""
+    n = l1_logits.size(0)
+    probs = l1_logits.new_zeros((n, NUM_GLOBAL_CLASSES))
+
+    l1_probs = torch.softmax(l1_logits / t1, dim=1)
+    p_cereal = l1_probs[:, SUPER_CEREAL_GROUP]
+    p_grass = l1_probs[:, SUPER_GRASSLAND_GROUP]
+
+    probs[:, GLOBAL_RAPESEED] = l1_probs[:, SUPER_RAPESEED]
+    probs[:, GLOBAL_CORN] = l1_probs[:, SUPER_CORN]
+
+    gate_l2a = (p_cereal > tau_route).to(probs.dtype)
+    l2a_probs = torch.softmax(l2a_logits, dim=1)
+    cereal_joint = l2a_probs * (p_cereal * gate_l2a).unsqueeze(1)
+    probs[:, CEREAL_COLS] = cereal_joint
+
+    gate_l2b = (p_grass > tau_route).to(probs.dtype)
+    l2b_probs = torch.softmax(l2b_logits / t2b, dim=1)
+    grass_mass = p_grass * gate_l2b
+    p_l2b_grass = l2b_probs[:, L2B_GRASS_LOCAL]
+    p_l2b_anomaly = l2b_probs[:, L2B_ANOMALY_LOCAL]
+
+    grass_path_mass = grass_mass * p_l2b_grass
+    anomaly_mass = grass_mass * p_l2b_anomaly
+
+    gate_l2c = (grass_path_mass > tau_route).to(probs.dtype)
+    l2c_probs = torch.softmax(l2c_logits / t2c, dim=1)
+    meadow_joint = l2c_probs * (grass_path_mass * gate_l2c).unsqueeze(1)
+    probs[:, MEADOW_COLS] = meadow_joint
+
+    gate_l3 = (anomaly_mass > tau_route).to(probs.dtype)
+    l3_probs = torch.softmax(-l3_distances / t3, dim=1)
+    l3_joint = l3_probs * (anomaly_mass * gate_l3).unsqueeze(1)
+    probs[:, L3_COLS] += l3_joint
+
+    log_p = torch.log(probs + 1e-9)
+    log_p[:, list(MEADOW_GLOBAL_IDS)] += b_meadow
+    log_p[:, list(TREE_GLOBAL_IDS)] += b_tree
+    return log_p.argmax(dim=-1)

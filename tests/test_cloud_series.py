@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 
 import numpy as np
 import torch
 
 from agricultureai.data.cloud_mask import L2A_B2, L2A_B4, L2A_B8, L2A_CLD, L2A_DOA, clear_observation_mask
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import build_series_store as bss  # noqa: E402
-import train_series_classifier as tsc  # noqa: E402
+import build_series_store as bss
+import train_series_classifier as tsc
 
 
 def _raw(doys, ndvi, cld, blue=300.0):

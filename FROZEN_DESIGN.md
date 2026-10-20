@@ -52,7 +52,7 @@ Evaluation per region: 10 km spatial blocks in 5 folds (decode settings chosen o
 ## Rotation results (rotation finished 2026-10-15; scored 2026-10-19)
 
 Appended after the fact; nothing above was changed. Logs: `artifacts/rotation/<R>/protocol_{B,ablation}.log`,
-`verify[_seed<s>].json`, `run.log`; AP intervals for checks 1-2 in `artifacts/rotation/rotation_ap_ci.log` (`scripts/rotation_ap_ci.py`)
+`verify[_seed<s>].json`, `run.log`; AP intervals for checks 1-2 in `artifacts/rotation/rotation_ap_ci.log` (now `scripts/meta/paired_ap_ci.py`, arm B vs A / D per region)
 (same paired block bootstrap as the verifier: 1000 resamples of the 10 km blocks). Ranges are over the
 three meta seeds; m = 1 grid unless noted.
 
@@ -85,7 +85,7 @@ AP B / A / D = geo_mean blend of arm B / A / D; AP C = verifier on arm B's m = 1
 
 ### Post-hoc analysis of check 3 (2026-10-19; does not change the design)
 
-`scripts/diagnose_rotation_verifier.py` (log `artifacts/rotation/diagnosis.log`). frh03 holds 40% of all
+`scripts/rotation/diagnose_rotation_verifier.py` (log `artifacts/rotation/diagnosis.log`). frh03 holds 40% of all
 orchards, so its fold trains on the fewest (1,837 vs 2,117-2,706) and gets the loosest candidate threshold
 (tau 0.0055 vs 0.009-0.019; 18% of frh03 parcels become candidates instead of 8-10%). Setting the candidate
 share to 9% in every fold removes the frh03 loss (AP -0.3 to +0.3) and keeps the gain in the other regions

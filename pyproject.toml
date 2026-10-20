@@ -31,9 +31,6 @@ dev = [
 tracking = [
     "wandb",
 ]
-presentation = [
-    "python-pptx",
-]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

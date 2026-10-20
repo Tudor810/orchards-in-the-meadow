@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import compute_model_metrics as cmm  # noqa: E402
+import compute_model_metrics as cmm
 
-from agricultureai.evaluation.selection_protocol import confusion  # noqa: E402
-from agricultureai.pipeline import GLOBAL_ORCHARDS, NUM_GLOBAL_CLASSES  # noqa: E402
+from agricultureai.evaluation.selection_protocol import confusion
+from agricultureai.pipeline import GLOBAL_ORCHARDS, NUM_GLOBAL_CLASSES
+from agricultureai.verifier import decode
 
 
 def test_summarize_matches_sklearn_micro_and_macro():
@@ -34,5 +32,5 @@ def test_verifier_decode_orchard_only_above_threshold():
     p_meta = np.array([[0.1, 0.2, 0, 0, 0, 0.6, 0, 0.1, 0],   # meta says orchard, runner-up wheat
                        [0.0, 0.0, 0, 0, 0, 0.3, 0, 0.7, 0]])  # meta says meadow
     score = np.array([0.4, 1.8])
-    rows = cmm.verifier_decode(p_meta, score, np.array([0.5, 1.5, 2.0]))
+    rows = decode(p_meta, score, np.array([0.5, 1.5, 2.0]))
     assert rows.tolist() == [[1, GLOBAL_ORCHARDS], [1, GLOBAL_ORCHARDS], [1, 7]]

@@ -82,12 +82,11 @@ The expert cascade is `src/agricultureai/pipeline.py` (`DMOEPipeline`).
 ### 1. Train experts
 
 ```bash
-python scripts/train_transformer_breizhcrops.py
-python scripts/train_expert_cereals.py
-python scripts/train_l2b_anomaly_gate.py
-python scripts/train_l2c_meadow_expert.py
-python scripts/train_l3_class_balanced_head.py \
-  --epochs 15 --batch-size 256 --max-samples 10000 --orchard-multiplier 3.0
+python scripts/cascade/train_transformer_breizhcrops.py
+python scripts/cascade/train_expert_cereals.py
+python scripts/cascade/train_l2b_anomaly_gate.py
+python scripts/cascade/train_l2c_meadow_expert.py
+python scripts/cascade/train_l3_protonet.py --level L2A --checkpoint-dir artifacts/checkpoints/level3_protonet
 ```
 
 Checkpoints land in `artifacts/checkpoints/<run_name>/best.pt`.
@@ -95,7 +94,7 @@ Checkpoints land in `artifacts/checkpoints/<run_name>/best.pt`.
 ### 2. Build meta-classifier caches
 
 ```bash
-python scripts/build_meta_caches.py
+python scripts/cascade/build_meta_caches.py
 ```
 
 `build_meta_caches.py` extracts the branch outputs (`sweep_dmoe_parameters.py --extract-only`),
@@ -106,75 +105,93 @@ features as in Reproducing below (`patch_l2a_features.py`, `patch_l3_distances.p
 `patch_global_logits.py`). Caches: `artifacts/cached_logits_train.pt`,
 `artifacts/cached_logits_eval.pt`.
 
-### 3. Train and evaluate meta-classifier
+### 3. Previous best meta-classifier (L1C era, Table 1 reference row)
 
 ```bash
-python scripts/train_meta_classifier.py --orchard-multiplier 25
-python scripts/compare_meta_vs_msresnet.py --orchard-multiplier 25
-python scripts/sweep_meta_m_area.py
+python scripts/meta/train_meta_classifier.py --orchard-multiplier 25
+python scripts/meta/sweep_meta_m_area.py
 ```
+
+The current meta-classifier, verifier and evaluation protocol are under Reproducing below.
 
 ### 4. Evaluate DMOE cascade (without meta)
 
 ```bash
-python scripts/evaluate_dmoe_pipeline.py \
+python scripts/cascade/evaluate_dmoe_pipeline.py \
   --l1-weights  artifacts/checkpoints/transformer_l1_4class/best.pt \
   --l2a-weights artifacts/checkpoints/expert_cereals/best.pt \
   --l2b-weights artifacts/checkpoints/l2b_anomaly_gate/best.pt \
   --l2c-weights artifacts/checkpoints/l2c_meadow_expert/best.pt \
-  --l3-weights  artifacts/checkpoints/level3_linear_head/best.pt
+  --l3-weights  artifacts/checkpoints/level3_protonet/best.pt
 ```
 
 ### Baselines
 
 ```bash
-python scripts/evaluate_pretrained_models.py --full-region
-python main.py   # quick Transformer baseline on frh04
+python scripts/cascade/evaluate_pretrained_models.py --full-region
 ```
 
 ## Scripts
 
+Scripts run from the repository root (`python scripts/<stage>/<script>.py`); code shared between
+scripts lives in `src/agricultureai`.
+
+**`scripts/data/`**: per-parcel inputs
+
+| Script | Purpose |
+| --- | --- |
+| `build_series_store.py` | Pack L2A (or L1C) series + per-date clear-sky flags per region |
+| `compute_phenology_features.py` | 15 orchard-vs-meadow phenology features from clear dates |
+
+**`scripts/cascade/`**: four-tier expert cascade, branch-output caches, pretrained baselines
+
 | Script | Purpose |
 | --- | --- |
 | `train_transformer_breizhcrops.py` | L1 4-class router |
-| `train_expert_cereals.py` | L2a barley/wheat (LTAE) |
+| `train_expert_cereals.py` | L2a barley / wheat (LTAE) |
 | `train_l2b_anomaly_gate.py` | L2b grass vs anomaly (GL-TAE) |
-| `train_l2c_meadow_expert.py` | L2c meadow split (MSResNet) |
-| `train_l3_class_balanced_head.py` | L3 linear head (production) |
-| `sweep_dmoe_parameters.py` | Extract DMOE logits to cache |
-| `append_msresnet_logits.py` | Add MSResNet features to cache |
-| `append_transformer_logits.py` | Add Transformer features to cache |
-| `build_meta_caches.py` | Build train / eval caches from the expert checkpoints |
-| `append_parcel_metadata.py` | Add 8-d parcel metadata to cache |
-| `patch_l3_distances.py` | Refresh L3 distances in cache (8-view TTA) |
-| `patch_l2a_features.py`, `patch_global_logits.py` | Recompute L2a / pretrained-network logits from 8 resampled views |
-| `compute_phenology_features.py` | 15 orchard-vs-meadow phenology features |
-| `build_series_store.py` | Pack L2A series + per-date clear-sky flags per region |
-| `train_series_classifier.py` | 9-class MSResNet on all or cloud-screened L2A dates; TTA logit export |
-| `train_meta_variants.py` | Meta-classifier variants with extra feature blocks (`--extra`) |
+| `train_l2c_meadow_expert.py` | L2c permanent / temporary meadows (MSResNet) |
+| `train_l3_protonet.py` | L3 rare-class ProtoNet (Mahalanobis) |
+| `evaluate_dmoe_pipeline.py` | Full cascade on frh04 |
+| `sweep_dmoe_parameters.py` | Extract branch outputs to a cache; cascade decode sweep |
+| `build_meta_caches.py` | Build the train / eval caches from the expert checkpoints |
+| `append_msresnet_logits.py`, `append_transformer_logits.py` | Pretrained L1C network logits into an L1C cache |
+| `append_l1c_cached_global_logits.py` | Align those logits into the L2A caches by parcel id |
+| `append_parcel_metadata.py` | 8 parcel-metadata features |
+| `patch_global_logits.py`, `patch_l2a_features.py`, `patch_l3_distances.py` | Recompute pretrained-network / L2a / L3 outputs from 8 resampled views |
+| `evaluate_pretrained_models.py` | Pretrained MSResNet / Transformer baselines |
+
+**`scripts/networks/`**: series networks trained on L2A
+
+| Script | Purpose |
+| --- | --- |
+| `train_series_classifier.py` | 9-class MSResNet on all or cloud-screened dates (optional class-weighted loss); TTA logit export |
+| `network_as_arm.py` | A network's frh04 logits as a protocol arm (same decision dial as the meta-classifier) |
+
+**`scripts/meta/`**: meta-classifier, orchard verifier, evaluation
+
+| Script | Purpose |
+| --- | --- |
+| `train_meta_variants.py` | Meta-classifier with extra feature blocks / dropped blocks / frh04 cross-fitting |
 | `evaluate_meta_protocol.py` | Out-of-sample decode selection, block bootstrap, paired arms |
-| `orchard_verifier.py` | Two-stage orchard verifier (`oof` / `features` / `verify` stages) |
-| `compute_model_metrics.py` | Confusion matrices and micro / macro P, R, F1: baseline, meta, final |
-| `region_rotation.py` | Pre-registered four-region rotation of the frozen design |
-| `rotation_ap_ci.py` | Paired block-bootstrap intervals for the rotation's orchard-AP differences |
-| `diagnose_rotation_verifier.py` | Post-hoc verifier variants in the rotation (candidate share, feature groups) |
-| `leakage_ap_ci.py` | Paired block-bootstrap interval for the stacking-leakage orchard-AP difference |
-| `network_as_arm.py` | A series network's frh04 logits as a protocol arm (same decision dial as the meta-classifier) |
-| `paired_ap_ci.py` | Paired block-bootstrap interval for the orchard-AP difference between any two frh04 arms |
+| `orchard_verifier.py` | Two-stage orchard verifier (`oof` / `features` / `verify`) |
+| `compute_model_metrics.py` | Confusion matrices, micro / macro P, R, F1, orchard error shares |
+| `paired_ap_ci.py` | Paired block-bootstrap interval for the orchard-AP difference of two arms |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
-| `train_meta_classifier.py` | XGBoost late fusion |
-| `sweep_meta_m_area.py` | Sweep orchard multiplier (production tuning) |
-| `compare_meta_vs_msresnet.py` | Side-by-side per-class metrics |
-| `evaluate_dmoe_pipeline.py` | Full 4-tier pipeline eval |
-| `evaluate_pretrained_models.py` | MSResNet / Transformer baselines |
-| `count_class_distribution.py` | Label counts per region |
-| `generate_full_presentation.py` | Build PowerPoint summary |
+| `train_meta_classifier.py`, `sweep_meta_m_area.py` | Previous best (L1C-era XGBoost, `m = 25`) |
+
+**`scripts/rotation/`**: pre-registered region rotation
+
+| Script | Purpose |
+| --- | --- |
+| `region_rotation.py` | Four-region rotation of the frozen design (`prep` / `meta` / `oof` / `verify`) |
+| `diagnose_rotation_verifier.py` | Post-hoc verifier variants (candidate share, feature groups) |
 
 ## Results (frh04, held out)
 
 Decode settings (blend, orchard multiplier `m`, orchard / meadow biases) are chosen out of
 sample: frh04 is cut into 10 km spatial blocks grouped into 5 folds, and each fold is scored
-with the settings a fixed rule picks on the other four (`scripts/evaluate_meta_protocol.py`).
+with the settings a fixed rule picks on the other four (`scripts/meta/evaluate_meta_protocol.py`).
 Rows marked † are means over 3 training seeds (network and meta-classifier seed 42, 1, 2);
 brackets are 95% spatial block-bootstrap intervals (seed 42).
 
@@ -210,7 +227,7 @@ design: `artifacts/meta_protocol_final.log`. ‡ Verifier decode: orchard where 
 score passes a threshold chosen out of sample, else the meta argmax without orchards
 (`artifacts/orchard_verifier_final/verify_seed*.log`). Paired confusion matrices and micro /
 macro precision, recall and F1 for the baseline, the meta-classifier and the final system:
-`scripts/compute_model_metrics.py` (`artifacts/model_metrics_frh04.log`).
+`scripts/meta/compute_model_metrics.py` (`artifacts/model_metrics_frh04.log`).
 
 What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 42 / 1 / 2):
 
@@ -231,7 +248,7 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   gain (network 82.0–82.2% vs 82.5%; meta accuracy 82.40 vs 82.61%, orchard AP 33.3 vs 34.0;
   `artifacts/meta_protocol_indices.log`).
 - End-to-end alternatives, given the same decision dial (biases and out-of-sample selection;
-  `scripts/network_as_arm.py`, `artifacts/meta_protocol_e2e.log`, `artifacts/e2e/paired_ap_ci.log`):
+  `scripts/networks/network_as_arm.py`, `artifacts/meta_protocol_e2e.log`, `artifacts/e2e/paired_ap_ci.log`):
   the L2A network alone reaches 82.24% / 37.0% orchard recall at accuracy-first (argmax: 17.2%);
   trained with a class-weighted loss (`train_series_classifier.py --class-weights orchard` ×10,
   or `sqrt_inv` capped at 10) 81.69% / 45.4% and 82.01% / 40.6%. Weighting shifts the operating
@@ -272,7 +289,7 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   22.3% orchard precision; seed 42). Re-tested for the final design (L2A network block
   included, 3 seeds; `artifacts/meta_protocol_leakage_final.log`): accuracy changes by
   −0.08 to +0.12 points at all three operating points and orchard AP by −0.7 to −1.0
-  (35.3 → 34.5; `scripts/leakage_ap_ci.py`), every interval spanning zero. At the default
+  (35.3 → 34.5; `scripts/meta/paired_ap_ci.py`), every interval spanning zero. At the default
   decoding the out-of-sample model is only more conservative on orchards (accuracy-first:
   37.5% recall at 30.7% precision instead of 48.7% at 21.7%; orchard F1 +3.0 to +4.5).
   In-sample training features do not inflate the reported results.
@@ -303,7 +320,7 @@ D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
    20 → 32%, 28 → 42%). In frh03: −1.1 / −0.8 / +0.7, every interval spans zero, and
    accuracy-first precision falls 52 → 47%. frh03 has the most orchards (0.73% of parcels)
    and the highest meta AP before the verifier, partly because AP rises with prevalence.
-   Post-hoc (`scripts/diagnose_rotation_verifier.py`, `artifacts/rotation/diagnosis.log`;
+   Post-hoc (`scripts/rotation/diagnose_rotation_verifier.py`, `artifacts/rotation/diagnosis.log`;
    the frozen design is unchanged): frh03 holds 40% of all orchards, so its fold trains on
    the fewest (1,837 vs 2,117–2,706) and gets the loosest candidate threshold (τ 0.0055 vs
    0.009–0.019; 18% of parcels become candidates instead of 8–10%). A 9% candidate share in
@@ -317,11 +334,12 @@ D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
 The variant on frh04 sits below the full design (82.40% / 50.9%, AP 32.5 vs 82.67% / 48.7%,
 AP 35.3), as expected without the pretrained networks and with one L2A seed. Logs:
 `artifacts/rotation/<region>/protocol_{B,ablation}.log` and `verify*.json`; AP intervals for
-checks 1–2: `artifacts/rotation/rotation_ap_ci.log`.
+checks 1–2 (`scripts/meta/paired_ap_ci.py`): `artifacts/rotation/rotation_ap_ci.log`.
 
 ### Phenology features
 
-96% of false orchards are meadows, so `scripts/compute_phenology_features.py` adds 15
+96% of false orchards are meadows and 98% of missed orchards are called meadows (meta-classifier,
+`compute_model_metrics.py`: 96.4% / 97.5%), so `scripts/data/compute_phenology_features.py` adds 15
 per-parcel features aimed at that confusion, computed from clear dates only (`CLD == 0`):
 seasonal NDVI means and winter minimum, NDVI spread, summer-minus-winter contrast,
 mowing-like NDVI drops in April–September, spring / summer red-edge (NDRE) and moisture
@@ -396,7 +414,7 @@ pretrained L1C models see their 13 channels permuted (consistently in training a
 
 ### Feature-layout ablation
 
-`scripts/ablate_meta_layouts.py`: XGBoost only, `m = 1`, no decode bias, 3 seeds (mean ± sd);
+`scripts/meta/ablate_meta_layouts.py`: XGBoost only, `m = 1`, no decode bias, 3 seeds (mean ± sd);
 deltas are paired against the compact layout.
 
 | Layout | Features | Accuracy | Orchard recall | Orchard precision | Δ acc | Δ orchard |
@@ -417,29 +435,29 @@ trades 4.3 points of orchard recall for 0.39 points of accuracy.
 ### Reproducing
 
 ```bash
-python scripts/patch_l2a_features.py artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
-python scripts/patch_l3_distances.py --l3-weights artifacts/checkpoints/level3_protonet_l2a_episodic/best.pt \
+python scripts/cascade/patch_l2a_features.py artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
+python scripts/cascade/patch_l3_distances.py --l3-weights artifacts/checkpoints/level3_protonet_l2a_episodic/best.pt \
   artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
-python scripts/patch_global_logits.py --models msresnet artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
-python scripts/compute_phenology_features.py artifacts/cached_logits_train.pt --output artifacts/phenology_train.npz
-python scripts/compute_phenology_features.py artifacts/cached_logits_eval.pt --output artifacts/phenology_eval.npz
-python scripts/train_meta_variants.py --seed 42 --proba-dir artifacts/pruned_proba_cache_pheno \
+python scripts/cascade/patch_global_logits.py --models msresnet artifacts/cached_logits_train.pt artifacts/cached_logits_eval.pt
+python scripts/data/compute_phenology_features.py artifacts/cached_logits_train.pt --output artifacts/phenology_train.npz
+python scripts/data/compute_phenology_features.py artifacts/cached_logits_eval.pt --output artifacts/phenology_eval.npz
+python scripts/meta/train_meta_variants.py --seed 42 --proba-dir artifacts/pruned_proba_cache_pheno \
   --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz  # repeat per seed
-python scripts/evaluate_meta_protocol.py --arm pheno=artifacts/pruned_proba_cache_pheno
-python scripts/ablate_meta_layouts.py --seeds 42,1,2
+python scripts/meta/evaluate_meta_protocol.py --arm pheno=artifacts/pruned_proba_cache_pheno
+python scripts/meta/ablate_meta_layouts.py --seeds 42,1,2
 
 # L2A-trained MSResNet block (cloud-screened dates)
 for r in frh01 frh02 frh03 frh04; do
-  python scripts/build_series_store.py $r --output artifacts/series_store/$r.npz
+  python scripts/data/build_series_store.py $r --output artifacts/series_store/$r.npz
 done
 CK=artifacts/checkpoints/msresnet_l2a_clear
-python scripts/train_series_classifier.py --dates clear --seed 42 --out-dir $CK  # resumes; rerun until done
-python scripts/train_series_classifier.py --dates clear --seed 42 --out-dir $CK --export train
-python scripts/train_series_classifier.py --dates clear --seed 42 --out-dir $CK --export eval
-python scripts/train_meta_variants.py --seed 42 --proba-dir artifacts/pruned_proba_cache_phenomsclear \
+python scripts/networks/train_series_classifier.py --dates clear --seed 42 --out-dir $CK  # resumes; rerun until done
+python scripts/networks/train_series_classifier.py --dates clear --seed 42 --out-dir $CK --export train
+python scripts/networks/train_series_classifier.py --dates clear --seed 42 --out-dir $CK --export eval
+python scripts/meta/train_meta_variants.py --seed 42 --proba-dir artifacts/pruned_proba_cache_phenomsclear \
   --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz \
   --extra msclear=$CK/logits_train.npz,$CK/logits_eval.npz
-python scripts/evaluate_meta_protocol.py --pair phenomsclear:pheno \
+python scripts/meta/evaluate_meta_protocol.py --pair phenomsclear:pheno \
   --arm pheno=artifacts/pruned_proba_cache_pheno \
   --arm phenomsclear=artifacts/pruned_proba_cache_phenomsclear
 ```
@@ -463,55 +481,61 @@ V=artifacts/orchard_verifier_final
 for s in 42 1 2; do
   sfx=$([ $s = 42 ] || echo _seed$s)
   for m in 1 2 3; do
-    python scripts/train_meta_variants.py --seed $s --multipliers $m --drop-blocks l3_raw,cereal \
+    python scripts/meta/train_meta_variants.py --seed $s --multipliers $m --drop-blocks l3_raw,cereal \
       --proba-dir artifacts/pruned_proba_cache_noexpens$sfx \
       --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz \
       --extra msens=$ENS/logits_train.npz,$ENS/logits_eval.npz
   done
   for r in frh01 frh02 frh03; do
-    python scripts/orchard_verifier.py oof --region $r --seed $s --work-dir $V \
+    python scripts/meta/orchard_verifier.py oof --region $r --seed $s --work-dir $V \
       --base-tag noexpens --drop-blocks l3_raw,cereal --net-dir $ENS
   done
-  python scripts/orchard_verifier.py features --seed $s --work-dir $V --base-tag noexpens
-  python scripts/orchard_verifier.py verify --seed $s --work-dir $V --base-tag noexpens
+  python scripts/meta/orchard_verifier.py features --seed $s --work-dir $V --base-tag noexpens
+  python scripts/meta/orchard_verifier.py verify --seed $s --work-dir $V --base-tag noexpens
 done
 A=artifacts/pruned_proba_cache_noexpens
-python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2
-python scripts/compute_model_metrics.py   # confusion matrices, micro / macro P, R, F1
+python scripts/meta/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2
+python scripts/meta/compute_model_metrics.py   # confusion matrices, micro / macro P, R, F1
 # stacking-leakage test: same arm, meta-classifier cross-fitted on frh04's own folds
 for s in 42 1 2; do
   sfx=$([ $s = 42 ] || echo _seed$s)
-  python scripts/train_meta_variants.py --train-on frh04-oof --seed $s --drop-blocks l3_raw,cereal \
+  python scripts/meta/train_meta_variants.py --train-on frh04-oof --seed $s --drop-blocks l3_raw,cereal \
     --proba-dir artifacts/pruned_proba_cache_noexpensoof$sfx \
     --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz \
     --extra msens=$ENS/logits_train.npz,$ENS/logits_eval.npz
 done
 O=artifacts/pruned_proba_cache_noexpensoof
-python scripts/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2 \
+python scripts/meta/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_seed2 \
   --arm finaloof=$O,${O}_seed1,${O}_seed2 --pair finaloof:final \
   --output-log artifacts/meta_protocol_leakage_final.log --output-json artifacts/meta_protocol_leakage_final.json
-python scripts/leakage_ap_ci.py
+python scripts/meta/paired_ap_ci.py $O $A
 # end-to-end baselines with the same decision dial (unweighted, orchards x10, capped sqrt-inverse)
 for s in 42 1 2; do
   sfx=$([ $s = 42 ] || echo _seed$s)
-  python scripts/network_as_arm.py artifacts/checkpoints/msresnet_l2a_clear$sfx/logits_eval.npz artifacts/pruned_proba_cache_l2anetdial$sfx
+  python scripts/networks/network_as_arm.py artifacts/checkpoints/msresnet_l2a_clear$sfx/logits_eval.npz artifacts/pruned_proba_cache_l2anetdial$sfx
   for w in "orchw10 --class-weights orchard --orchard-weight 10" "sqrtinv --class-weights sqrt_inv --weight-cap 10"; do
     set -- $w; n=$1; shift; CKW=artifacts/checkpoints/msresnet_l2a_clear_$n$sfx
-    python scripts/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --time-budget-min 600
-    python scripts/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --export eval --align-cache artifacts/cached_logits_eval.pt
-    python scripts/network_as_arm.py $CKW/logits_eval.npz artifacts/pruned_proba_cache_${n}dial$sfx
+    python scripts/networks/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --time-budget-min 600
+    python scripts/networks/train_series_classifier.py --dates clear --seed $s --out-dir $CKW "$@" --export eval --align-cache artifacts/cached_logits_eval.pt
+    python scripts/networks/network_as_arm.py $CKW/logits_eval.npz artifacts/pruned_proba_cache_${n}dial$sfx
   done
 done
 # then evaluate_meta_protocol.py with --arm final=... --arm l2anetdial=... --arm orchw10dial=... --arm sqrtinvdial=...
-# --pair final:<arm>, and scripts/paired_ap_ci.py artifacts/pruned_proba_cache_noexpens artifacts/pruned_proba_cache_<arm>
+# --pair final:<arm>, and scripts/meta/paired_ap_ci.py artifacts/pruned_proba_cache_noexpens artifacts/pruned_proba_cache_<arm>
 ```
 
 Region rotation (design and checks pre-registered in `FROZEN_DESIGN.md`):
-`artifacts/rotation/run_rotation.sh` runs `scripts/region_rotation.py` (`prep`, then `meta`,
+`artifacts/rotation/run_rotation.sh` runs `scripts/rotation/region_rotation.py` (`prep`, then `meta`,
 `oof` and `verify` per test region) and `evaluate_meta_protocol.py` on each region's spatial
-folds; `meta` and `oof` skip outputs that already exist. Afterwards,
-`python scripts/rotation_ap_ci.py > artifacts/rotation/rotation_ap_ci.log` adds the
-orchard-AP intervals for checks 1–2.
+folds; `meta` and `oof` skip outputs that already exist. The orchard-AP intervals for checks
+1–2 compare arm B with arms A and D per test region:
+
+```bash
+for r in frh01 frh02 frh03 frh04; do for arm in A D; do
+  python scripts/meta/paired_ap_ci.py artifacts/rotation/$r/proba_B artifacts/rotation/$r/proba_$arm \
+    --folds artifacts/rotation/folds_$r.npz --labels artifacts/rotation/ids_$r.pt
+done; done
+```
 
 ## Installation
 
@@ -527,29 +551,27 @@ python -m pip install -e ".[dev]"
 python -m pip install -e ".[tracking]"
 ```
 
-On Windows, if not installed editable:
-
-```powershell
-$env:PYTHONPATH = "src"
-python scripts/train_meta_classifier.py
-```
+On Windows, if not installed editable, set `$env:PYTHONPATH = "src"` before running a script.
 
 ## Project layout
 
 ```text
 .
-├── main.py
-├── scripts/           # training and evaluation entry points
 ├── src/agricultureai/
-│   ├── data/          # loaders, label maps, episodic L3 sampling, cloud mask
-│   ├── evaluation/    # shared eval helpers
-│   ├── meta_features.py  # feature layouts (66-d full, 39-d compact) + XGB / CatBoost helpers
-│   ├── proba_cache.py    # fingerprinted meta-classifier probability caches
-│   ├── models/        # Transformer, LTAE, GL-TAE, MSResNet, ProtoNet
-│   ├── pipeline.py    # DMOEPipeline
-│   └── training/      # trainer, checkpoints, losses
+│   ├── data/              # BreizhCrops loaders, label maps, episodic L3 sampling, cloud mask
+│   ├── models/            # Transformer, LTAE, GL-TAE, MSResNet, ProtoNet
+│   ├── training/          # trainer, checkpoints, losses
+│   ├── evaluation/        # selection protocol, spatial folds + decode grid, block bootstrap
+│   ├── pipeline.py        # DMOEPipeline + decoding of cached branch outputs
+│   ├── meta_features.py   # feature layouts (66-d full, 39-d compact), XGBoost / CatBoost, blends
+│   ├── meta_training.py   # meta-classifier feature loading and fitting
+│   ├── verifier.py        # orchard verifier: features, candidates, model, decoding
+│   └── cache_alignment.py # align outputs across BreizhCrops levels by parcel id
+├── scripts/               # entry points by stage: data, cascade, networks, meta, rotation
 ├── tests/
-└── artifacts/         # checkpoints, caches, logs (gitignored)
+├── paper/                 # paper (.docx), its build script and figure scripts
+├── FROZEN_DESIGN.md       # pre-registered final design, checks and results
+└── artifacts/             # checkpoints, caches, logs (gitignored)
 ```
 
 ## Tests
