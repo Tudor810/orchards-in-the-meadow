@@ -1,0 +1,7 @@
+{
+  "abstract": "Training the meta-classifier on out-of-sample network outputs instead changes neither accuracy nor orchard average precision, so stacking leakage does not inflate the results.",
+  "summary": "Training the meta-classifier on out-of-sample network outputs changes neither accuracy nor orchard AP.",
+  "section": "For the final design the result is the same (Table 4): across the three operating points accuracy changes by −0.08 to +0.12 points and orchard AP by −0.7 to −1.0, every interval spanning zero, despite the five-fold smaller training set. At the default decoding the out-of-sample model is only more conservative on orchards (accuracy-first: 37.5% recall at 30.7% precision instead of 48.7% at 21.7%). The in-sample training features therefore do not inflate the reported results.",
+  "conclusion": "Training the meta-classifier on out-of-sample network outputs changes neither accuracy nor orchard AP, so the stacking design does not inflate these numbers.",
+  "limitation": "The stacking-leakage test was run on frh04 only."
+}

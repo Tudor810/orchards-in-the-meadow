@@ -1,0 +1,11 @@
+{
+  "name": "agricultureai-paper",
+  "private": true,
+  "description": "Builds Orchards_in_the_Meadow.docx from build_paper.js",
+  "scripts": {
+    "build": "node build_paper.js Orchards_in_the_Meadow.docx . leakage.json"
+  },
+  "dependencies": {
+    "docx": "9.5.1"
+  }
+}
