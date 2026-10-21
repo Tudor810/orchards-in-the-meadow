@@ -48,7 +48,6 @@ from agricultureai.evaluation.selection_protocol import (
     per_class_from_confusion,
     percentile_ci,
     select_on,
-    spatial_block_folds,
 )
 from agricultureai.evaluation.meta_protocol import CLASS_NAMES, config_grid, describe, load_spatial_folds
 from agricultureai.pipeline import GLOBAL_ORCHARDS, NUM_GLOBAL_CLASSES
@@ -123,7 +122,7 @@ def main() -> None:
         sel = folds == f
         out(f"  fold {f}: {int(sel.sum()):6,} parcels, {int((y[sel] == GLOBAL_ORCHARDS).sum()):3d} orchards")
     out("Meta-classifier trained on frh01-frh03; decode config selected on the other folds only.")
-    out(f"Rules: accuracy_first (max acc | orchard>=35), orchard_first (max orchard | acc>=80.69), closest_stretch")
+    out("Rules: accuracy_first (max acc | orchard>=35), orchard_first (max orchard | acc>=80.69), closest_stretch")
 
     # ---- per arm / seed ------------------------------------------------------
     results: Dict[str, dict] = defaultdict(dict)
@@ -161,9 +160,8 @@ def main() -> None:
     # ---- report ---------------------------------------------------------------
     # Published references only (different parcels and preprocessing). A paired baseline
     # on these parcels, from the cache's 8-view MSResNet logits, is compute_model_metrics.py.
-    out("\nReferences (L1C eval set, 122,614 parcels; not paired with these rows):")
+    out("\nReference (L1C eval set, 122,614 parcels; not paired with these rows):")
     out("  MSResNet (stock transform, README):               acc=80.77 orchR=15.73 wheat=97.58")
-    out("  README best (XGB m=25, 64-d, selected on frh04):  acc=80.76 orchR=35.80 wheat=97.57")
 
     for rule_name in SELECTION_RULES:
         out(f"\n=== Rule: {rule_name} " + "=" * 60)

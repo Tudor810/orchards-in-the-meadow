@@ -4,8 +4,6 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Paper build tooling (paper/package.json lists it)
-node_modules/
 
 # Data (CRITICAL: BreizhCrops is huge)
 breizhcrops_dataset/
@@ -32,3 +30,6 @@ test_target_indices.json
 
 # Office lock files
 ~$*
+
+# Presentation material (kept locally, not part of the code repository)
+Presentation/

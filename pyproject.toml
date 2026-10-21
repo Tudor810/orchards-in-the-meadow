@@ -17,8 +17,6 @@ dependencies = [
     "scikit-learn>=1.4",
     "scipy>=1.11",
     "torch",
-    "torchvision",
-    "torchaudio",
     "tqdm",
     "openpyxl>=3.1.5",
     "xgboost>=2.0",
