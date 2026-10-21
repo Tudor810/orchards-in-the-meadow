@@ -1,0 +1,932 @@
+[
+  {
+    "test": "frh03",
+    "seed": 42,
+    "variant": "base",
+    "tau_train": 0.005517748184502125,
+    "tau_test": 0.005517748184502125,
+    "candidates": 30021,
+    "candidate_share": 0.18045044990893627,
+    "candidate_orchard_coverage": 0.9597370583401807,
+    "train_candidate_orchard_share": 0.04413413787579431,
+    "ap_diff_ci": [
+      -3.435728896064078,
+      1.2510924520448694
+    ],
+    "meta": {
+      "ap": 43.00836257830787,
+      "acc_first": {
+        "accuracy": 80.77683675248096,
+        "orchard_precision": 51.405152224824356,
+        "orchard_recall": 36.072308956450286
+      }
+    },
+    "verifier": {
+      "ap": 41.871656767392146,
+      "acc_first": {
+        "accuracy": 80.75760216869932,
+        "orchard_precision": 46.61733615221987,
+        "orchard_recall": 36.2366474938373
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 42,
+    "variant": "share09",
+    "tau_train": 0.004877670202404261,
+    "tau_test": 0.031079012900590897,
+    "candidates": 14973,
+    "candidate_share": 0.08999981967577704,
+    "candidate_orchard_coverage": 0.8800328677074774,
+    "train_candidate_orchard_share": 0.041793370360131685,
+    "ap_diff_ci": [
+      -2.38942994129176,
+      2.277801476068234
+    ],
+    "meta": {
+      "ap": 43.00836257830787,
+      "acc_first": {
+        "accuracy": 80.77683675248096,
+        "orchard_precision": 51.405152224824356,
+        "orchard_recall": 36.072308956450286
+      }
+    },
+    "verifier": {
+      "ap": 42.990854044284674,
+      "acc_first": {
+        "accuracy": 80.76541621836061,
+        "orchard_precision": 46.855345911949684,
+        "orchard_recall": 36.729663105998355
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 42,
+    "variant": "noneigh",
+    "tau_train": 0.005517748184502125,
+    "tau_test": 0.005517748184502125,
+    "candidates": 30021,
+    "candidate_share": 0.18045044990893627,
+    "candidate_orchard_coverage": 0.9597370583401807,
+    "train_candidate_orchard_share": 0.04413413787579431,
+    "ap_diff_ci": [
+      -3.751787929757678,
+      0.3303715524356344
+    ],
+    "meta": {
+      "ap": 43.00836257830787,
+      "acc_first": {
+        "accuracy": 80.77683675248096,
+        "orchard_precision": 51.405152224824356,
+        "orchard_recall": 36.072308956450286
+      }
+    },
+    "verifier": {
+      "ap": 41.25434859105452,
+      "acc_first": {
+        "accuracy": 80.77202810653556,
+        "orchard_precision": 48.14410480349345,
+        "orchard_recall": 36.2366474938373
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 42,
+    "variant": "nomonthly",
+    "tau_train": 0.005517748184502125,
+    "tau_test": 0.005517748184502125,
+    "candidates": 30021,
+    "candidate_share": 0.18045044990893627,
+    "candidate_orchard_coverage": 0.9597370583401807,
+    "train_candidate_orchard_share": 0.04413413787579431,
+    "ap_diff_ci": [
+      -2.6860539468582214,
+      1.3852185150416374
+    ],
+    "meta": {
+      "ap": 43.00836257830787,
+      "acc_first": {
+        "accuracy": 80.77683675248096,
+        "orchard_precision": 51.405152224824356,
+        "orchard_recall": 36.072308956450286
+      }
+    },
+    "verifier": {
+      "ap": 42.23056472017242,
+      "acc_first": {
+        "accuracy": 80.76120865315838,
+        "orchard_precision": 48.026315789473685,
+        "orchard_recall": 35.99013968775678
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 1,
+    "variant": "base",
+    "tau_train": 0.0054539963603019714,
+    "tau_test": 0.0054539963603019714,
+    "candidates": 29517,
+    "candidate_share": 0.17742100296332805,
+    "candidate_orchard_coverage": 0.9572719802793755,
+    "train_candidate_orchard_share": 0.044241629419479164,
+    "ap_diff_ci": [
+      -2.9637748148546614,
+      1.358707373362754
+    ],
+    "meta": {
+      "ap": 42.76550093084254,
+      "acc_first": {
+        "accuracy": 80.86579670247104,
+        "orchard_precision": 52.74463007159904,
+        "orchard_recall": 36.318816762530815
+      }
+    },
+    "verifier": {
+      "ap": 41.9950339100617,
+      "acc_first": {
+        "accuracy": 80.8441577957167,
+        "orchard_precision": 46.723044397463006,
+        "orchard_recall": 36.318816762530815
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 1,
+    "variant": "share09",
+    "tau_train": 0.004805853124707937,
+    "tau_test": 0.030391544103622437,
+    "candidates": 14973,
+    "candidate_share": 0.08999981967577704,
+    "candidate_orchard_coverage": 0.8824979457682827,
+    "train_candidate_orchard_share": 0.041969289537835186,
+    "ap_diff_ci": [
+      -2.2623912748333157,
+      1.7085847632414475
+    ],
+    "meta": {
+      "ap": 42.76550093084254,
+      "acc_first": {
+        "accuracy": 80.86579670247104,
+        "orchard_precision": 52.74463007159904,
+        "orchard_recall": 36.318816762530815
+      }
+    },
+    "verifier": {
+      "ap": 42.501526003648586,
+      "acc_first": {
+        "accuracy": 80.84235455348717,
+        "orchard_precision": 46.75186368477103,
+        "orchard_recall": 36.072308956450286
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 1,
+    "variant": "noneigh",
+    "tau_train": 0.0054539963603019714,
+    "tau_test": 0.0054539963603019714,
+    "candidates": 29517,
+    "candidate_share": 0.17742100296332805,
+    "candidate_orchard_coverage": 0.9572719802793755,
+    "train_candidate_orchard_share": 0.044241629419479164,
+    "ap_diff_ci": [
+      -2.844340241906853,
+      0.7456481876789387
+    ],
+    "meta": {
+      "ap": 42.76550093084254,
+      "acc_first": {
+        "accuracy": 80.86579670247104,
+        "orchard_precision": 52.74463007159904,
+        "orchard_recall": 36.318816762530815
+      }
+    },
+    "verifier": {
+      "ap": 41.734473335465786,
+      "acc_first": {
+        "accuracy": 80.85137076463481,
+        "orchard_precision": 48.26086956521739,
+        "orchard_recall": 36.48315529991783
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 1,
+    "variant": "nomonthly",
+    "tau_train": 0.0054539963603019714,
+    "tau_test": 0.0054539963603019714,
+    "candidates": 29517,
+    "candidate_share": 0.17742100296332805,
+    "candidate_orchard_coverage": 0.9572719802793755,
+    "train_candidate_orchard_share": 0.044241629419479164,
+    "ap_diff_ci": [
+      -2.633927492910969,
+      1.5838976475545032
+    ],
+    "meta": {
+      "ap": 42.76550093084254,
+      "acc_first": {
+        "accuracy": 80.86579670247104,
+        "orchard_precision": 52.74463007159904,
+        "orchard_recall": 36.318816762530815
+      }
+    },
+    "verifier": {
+      "ap": 42.19794743267053,
+      "acc_first": {
+        "accuracy": 80.85257292612117,
+        "orchard_precision": 49.325842696629216,
+        "orchard_recall": 36.072308956450286
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 2,
+    "variant": "base",
+    "tau_train": 0.00570572167634964,
+    "tau_test": 0.00570572167634964,
+    "candidates": 30582,
+    "candidate_share": 0.18382251287815493,
+    "candidate_orchard_coverage": 0.9605587510271159,
+    "train_candidate_orchard_share": 0.04571981745263449,
+    "ap_diff_ci": [
+      -1.532533889244942,
+      2.6825720199911145
+    ],
+    "meta": {
+      "ap": 42.62985471191069,
+      "acc_first": {
+        "accuracy": 80.90787235449338,
+        "orchard_precision": 52.33532934131736,
+        "orchard_recall": 35.90797041906327
+      }
+    },
+    "verifier": {
+      "ap": 43.280782083544594,
+      "acc_first": {
+        "accuracy": 80.89344641665716,
+        "orchard_precision": 48.52459016393443,
+        "orchard_recall": 36.48315529991783
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 2,
+    "variant": "share09",
+    "tau_train": 0.004678905475884676,
+    "tau_test": 0.03375699743628502,
+    "candidates": 14973,
+    "candidate_share": 0.08999981967577704,
+    "candidate_orchard_coverage": 0.8841413311421529,
+    "train_candidate_orchard_share": 0.04224573395994069,
+    "ap_diff_ci": [
+      -1.9887967095124635,
+      2.5279569085863214
+    ],
+    "meta": {
+      "ap": 42.62985471191069,
+      "acc_first": {
+        "accuracy": 80.90787235449338,
+        "orchard_precision": 52.33532934131736,
+        "orchard_recall": 35.90797041906327
+      }
+    },
+    "verifier": {
+      "ap": 42.896460477852,
+      "acc_first": {
+        "accuracy": 80.88983993219809,
+        "orchard_precision": 47.67567567567568,
+        "orchard_recall": 36.2366474938373
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 2,
+    "variant": "noneigh",
+    "tau_train": 0.00570572167634964,
+    "tau_test": 0.00570572167634964,
+    "candidates": 30582,
+    "candidate_share": 0.18382251287815493,
+    "candidate_orchard_coverage": 0.9605587510271159,
+    "train_candidate_orchard_share": 0.04571981745263449,
+    "ap_diff_ci": [
+      -2.024505325358413,
+      1.5798189150289932
+    ],
+    "meta": {
+      "ap": 42.62985471191069,
+      "acc_first": {
+        "accuracy": 80.90787235449338,
+        "orchard_precision": 52.33532934131736,
+        "orchard_recall": 35.90797041906327
+      }
+    },
+    "verifier": {
+      "ap": 42.431495640664664,
+      "acc_first": {
+        "accuracy": 80.89645182037303,
+        "orchard_precision": 48.9432703003337,
+        "orchard_recall": 36.15447822514379
+      }
+    }
+  },
+  {
+    "test": "frh03",
+    "seed": 2,
+    "variant": "nomonthly",
+    "tau_train": 0.00570572167634964,
+    "tau_test": 0.00570572167634964,
+    "candidates": 30582,
+    "candidate_share": 0.18382251287815493,
+    "candidate_orchard_coverage": 0.9605587510271159,
+    "train_candidate_orchard_share": 0.04571981745263449,
+    "ap_diff_ci": [
+      -1.9793528458944032,
+      1.702900271145006
+    ],
+    "meta": {
+      "ap": 42.62985471191069,
+      "acc_first": {
+        "accuracy": 80.90787235449338,
+        "orchard_precision": 52.33532934131736,
+        "orchard_recall": 35.90797041906327
+      }
+    },
+    "verifier": {
+      "ap": 42.55046524771696,
+      "acc_first": {
+        "accuracy": 80.8994572240889,
+        "orchard_precision": 47.81682641107562,
+        "orchard_recall": 36.89400164338537
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 42,
+    "variant": "base",
+    "tau_train": 0.009075922891497612,
+    "tau_test": 0.009075922891497612,
+    "candidates": 17585,
+    "candidate_share": 0.09844260826727574,
+    "candidate_orchard_coverage": 0.8783351120597652,
+    "train_candidate_orchard_share": 0.05540367612843183,
+    "ap_diff_ci": [
+      2.189705753329989,
+      5.859310539192654
+    ],
+    "meta": {
+      "ap": 39.018871289330534,
+      "acc_first": {
+        "accuracy": 83.82708585247885,
+        "orchard_precision": 42.49363867684479,
+        "orchard_recall": 35.64567769477055
+      }
+    },
+    "verifier": {
+      "ap": 43.05266735036975,
+      "acc_first": {
+        "accuracy": 83.87410990192127,
+        "orchard_precision": 51.70370370370371,
+        "orchard_recall": 37.246531483457844
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 42,
+    "variant": "share09",
+    "tau_train": 0.00711023760959506,
+    "tau_test": 0.011208240874111652,
+    "candidates": 16077,
+    "candidate_share": 0.09000067177213489,
+    "candidate_orchard_coverage": 0.8655282817502669,
+    "train_candidate_orchard_share": 0.050196443341604634,
+    "ap_diff_ci": [
+      2.309358802677096,
+      5.58270221822137
+    ],
+    "meta": {
+      "ap": 39.018871289330534,
+      "acc_first": {
+        "accuracy": 83.82708585247885,
+        "orchard_precision": 42.49363867684479,
+        "orchard_recall": 35.64567769477055
+      }
+    },
+    "verifier": {
+      "ap": 42.95120323214513,
+      "acc_first": {
+        "accuracy": 83.86515294012271,
+        "orchard_precision": 49.43977591036415,
+        "orchard_recall": 37.67342582710779
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 1,
+    "variant": "base",
+    "tau_train": 0.008813909254968166,
+    "tau_test": 0.008813909254968166,
+    "candidates": 17568,
+    "candidate_share": 0.09834744054816606,
+    "candidate_orchard_coverage": 0.8783351120597652,
+    "train_candidate_orchard_share": 0.055630183389790915,
+    "ap_diff_ci": [
+      0.9604091382927225,
+      5.4110059284813525
+    ],
+    "meta": {
+      "ap": 38.9890161290366,
+      "acc_first": {
+        "accuracy": 83.88586591428188,
+        "orchard_precision": 45.30831099195711,
+        "orchard_recall": 36.07257203842049
+      }
+    },
+    "verifier": {
+      "ap": 41.974146289765315,
+      "acc_first": {
+        "accuracy": 83.88586591428188,
+        "orchard_precision": 47.85615491009682,
+        "orchard_recall": 36.926360725720386
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 1,
+    "variant": "share09",
+    "tau_train": 0.006835822016000748,
+    "tau_test": 0.010829773731529713,
+    "candidates": 16077,
+    "candidate_share": 0.09000067177213489,
+    "candidate_orchard_coverage": 0.8633938100320171,
+    "train_candidate_orchard_share": 0.05014474772539289,
+    "ap_diff_ci": [
+      0.9599064044963901,
+      5.257033037604191
+    ],
+    "meta": {
+      "ap": 38.9890161290366,
+      "acc_first": {
+        "accuracy": 83.88586591428188,
+        "orchard_precision": 45.30831099195711,
+        "orchard_recall": 36.07257203842049
+      }
+    },
+    "verifier": {
+      "ap": 41.97070075990839,
+      "acc_first": {
+        "accuracy": 83.88418648394465,
+        "orchard_precision": 47.22598105548038,
+        "orchard_recall": 37.246531483457844
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 2,
+    "variant": "base",
+    "tau_train": 0.009935912676155567,
+    "tau_test": 0.009935912676155567,
+    "candidates": 17063,
+    "candidate_share": 0.09552039948049622,
+    "candidate_orchard_coverage": 0.8687299893276414,
+    "train_candidate_orchard_share": 0.05808458090679026,
+    "ap_diff_ci": [
+      1.296467527982623,
+      5.62341410160864
+    ],
+    "meta": {
+      "ap": 38.95779956779012,
+      "acc_first": {
+        "accuracy": 83.85787540866139,
+        "orchard_precision": 43.59637774902975,
+        "orchard_recall": 35.965848452508006
+      }
+    },
+    "verifier": {
+      "ap": 42.397957203760605,
+      "acc_first": {
+        "accuracy": 83.88922477495633,
+        "orchard_precision": 51.64179104477612,
+        "orchard_recall": 36.926360725720386
+      }
+    }
+  },
+  {
+    "test": "frh01",
+    "seed": 2,
+    "variant": "share09",
+    "tau_train": 0.007062344346195459,
+    "tau_test": 0.01145599689334631,
+    "candidates": 16077,
+    "candidate_share": 0.09000067177213489,
+    "candidate_orchard_coverage": 0.8633938100320171,
+    "train_candidate_orchard_share": 0.05027398676592225,
+    "ap_diff_ci": [
+      2.633759285882212,
+      6.034209565815525
+    ],
+    "meta": {
+      "ap": 38.95779956779012,
+      "acc_first": {
+        "accuracy": 83.85787540866139,
+        "orchard_precision": 43.59637774902975,
+        "orchard_recall": 35.965848452508006
+      }
+    },
+    "verifier": {
+      "ap": 43.22648717717649,
+      "acc_first": {
+        "accuracy": 83.90657888844105,
+        "orchard_precision": 54.57413249211357,
+        "orchard_recall": 36.926360725720386
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 42,
+    "variant": "base",
+    "tau_train": 0.018701549619436264,
+    "tau_test": 0.018701549619436264,
+    "candidates": 13339,
+    "candidate_share": 0.09474932874941398,
+    "candidate_orchard_coverage": 0.8333333333333334,
+    "train_candidate_orchard_share": 0.07585433475592661,
+    "ap_diff_ci": [
+      0.6472833019099664,
+      8.177033971261716
+    ],
+    "meta": {
+      "ap": 29.251114240399744,
+      "acc_first": {
+        "accuracy": 82.99569547243256,
+        "orchard_precision": 20.032051282051285,
+        "orchard_recall": 35.91954022988506
+      }
+    },
+    "verifier": {
+      "ap": 33.480208649273045,
+      "acc_first": {
+        "accuracy": 83.07667173360231,
+        "orchard_precision": 32.17821782178218,
+        "orchard_recall": 37.35632183908046
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 42,
+    "variant": "share09",
+    "tau_train": 0.010873313061892986,
+    "tau_test": 0.020675400272011757,
+    "candidates": 12671,
+    "candidate_share": 0.0900044039720987,
+    "candidate_orchard_coverage": 0.8247126436781609,
+    "train_candidate_orchard_share": 0.059699719675013065,
+    "ap_diff_ci": [
+      0.6793535164272858,
+      6.897410179433343
+    ],
+    "meta": {
+      "ap": 29.251114240399744,
+      "acc_first": {
+        "accuracy": 82.99569547243256,
+        "orchard_precision": 20.032051282051285,
+        "orchard_recall": 35.91954022988506
+      }
+    },
+    "verifier": {
+      "ap": 32.7803383862861,
+      "acc_first": {
+        "accuracy": 83.05678282735009,
+        "orchard_precision": 28.703703703703702,
+        "orchard_recall": 35.63218390804598
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 1,
+    "variant": "base",
+    "tau_train": 0.020042233169078827,
+    "tau_test": 0.020042233169078827,
+    "candidates": 12746,
+    "candidate_share": 0.09053714253242602,
+    "candidate_orchard_coverage": 0.8477011494252874,
+    "train_candidate_orchard_share": 0.07721824062916217,
+    "ap_diff_ci": [
+      1.3867713142632376,
+      8.532647029213567
+    ],
+    "meta": {
+      "ap": 29.60546487133271,
+      "acc_first": {
+        "accuracy": 83.05252091886747,
+        "orchard_precision": 21.858864027538726,
+        "orchard_recall": 36.49425287356322
+      }
+    },
+    "verifier": {
+      "ap": 34.367316178424836,
+      "acc_first": {
+        "accuracy": 83.11858050034806,
+        "orchard_precision": 30.508474576271187,
+        "orchard_recall": 36.206896551724135
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 1,
+    "variant": "share09",
+    "tau_train": 0.011331303976476192,
+    "tau_test": 0.020330093801021576,
+    "candidates": 12671,
+    "candidate_share": 0.0900044039720987,
+    "candidate_orchard_coverage": 0.8448275862068966,
+    "train_candidate_orchard_share": 0.05986601415878748,
+    "ap_diff_ci": [
+      0.527416746235348,
+      6.302955676971138
+    ],
+    "meta": {
+      "ap": 29.60546487133271,
+      "acc_first": {
+        "accuracy": 83.05252091886747,
+        "orchard_precision": 21.858864027538726,
+        "orchard_recall": 36.49425287356322
+      }
+    },
+    "verifier": {
+      "ap": 32.88959254390631,
+      "acc_first": {
+        "accuracy": 83.08448523248711,
+        "orchard_precision": 25.403225806451612,
+        "orchard_recall": 36.206896551724135
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 2,
+    "variant": "base",
+    "tau_train": 0.018720652908086777,
+    "tau_test": 0.018720652908086777,
+    "candidates": 13059,
+    "candidate_share": 0.09276043812419202,
+    "candidate_orchard_coverage": 0.8448275862068966,
+    "train_candidate_orchard_share": 0.0761246756494826,
+    "ap_diff_ci": [
+      0.8857274237293876,
+      8.328169207407232
+    ],
+    "meta": {
+      "ap": 29.110894233698183,
+      "acc_first": {
+        "accuracy": 83.00706056171954,
+        "orchard_precision": 19.21875,
+        "orchard_recall": 35.3448275862069
+      }
+    },
+    "verifier": {
+      "ap": 33.51435234873066,
+      "acc_first": {
+        "accuracy": 83.10011223025671,
+        "orchard_precision": 31.818181818181817,
+        "orchard_recall": 36.206896551724135
+      }
+    }
+  },
+  {
+    "test": "frh02",
+    "seed": 2,
+    "variant": "share09",
+    "tau_train": 0.01077401265501976,
+    "tau_test": 0.019833073019981384,
+    "candidates": 12671,
+    "candidate_share": 0.0900044039720987,
+    "candidate_orchard_coverage": 0.8390804597701149,
+    "train_candidate_orchard_share": 0.05958093790088849,
+    "ap_diff_ci": [
+      0.672355463158121,
+      7.000031624292171
+    ],
+    "meta": {
+      "ap": 29.110894233698183,
+      "acc_first": {
+        "accuracy": 83.00706056171954,
+        "orchard_precision": 19.21875,
+        "orchard_recall": 35.3448275862069
+      }
+    },
+    "verifier": {
+      "ap": 32.71451630671211,
+      "acc_first": {
+        "accuracy": 83.08945745905017,
+        "orchard_precision": 29.357798165137616,
+        "orchard_recall": 36.7816091954023
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 42,
+    "variant": "base",
+    "tau_train": 0.015410246327519417,
+    "tau_test": 0.015410246327519417,
+    "candidates": 9825,
+    "candidate_share": 0.08006812921732895,
+    "candidate_orchard_coverage": 0.8677536231884058,
+    "train_candidate_orchard_share": 0.06934902492374996,
+    "ap_diff_ci": [
+      2.3252666884580275,
+      5.712475912891684
+    ],
+    "meta": {
+      "ap": 31.992232077928435,
+      "acc_first": {
+        "accuracy": 82.63112429507449,
+        "orchard_precision": 28.59195402298851,
+        "orchard_recall": 36.05072463768116
+      }
+    },
+    "verifier": {
+      "ap": 36.000300251705546,
+      "acc_first": {
+        "accuracy": 82.72239788766828,
+        "orchard_precision": 41.58004158004158,
+        "orchard_recall": 36.231884057971016
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 42,
+    "variant": "share09",
+    "tau_train": 0.008128909394145012,
+    "tau_test": 0.011972459964454174,
+    "candidates": 11044,
+    "candidate_share": 0.09000228183981485,
+    "candidate_orchard_coverage": 0.8876811594202898,
+    "train_candidate_orchard_share": 0.05338395736602548,
+    "ap_diff_ci": [
+      2.942010276450491,
+      6.099580880853797
+    ],
+    "meta": {
+      "ap": 31.992232077928435,
+      "acc_first": {
+        "accuracy": 82.63112429507449,
+        "orchard_precision": 28.59195402298851,
+        "orchard_recall": 36.05072463768116
+      }
+    },
+    "verifier": {
+      "ap": 36.42938897580991,
+      "acc_first": {
+        "accuracy": 82.71669328813117,
+        "orchard_precision": 39.01960784313726,
+        "orchard_recall": 36.05072463768116
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 1,
+    "variant": "base",
+    "tau_train": 0.015555228106677532,
+    "tau_test": 0.015555228106677532,
+    "candidates": 9641,
+    "candidate_share": 0.07856863448185937,
+    "candidate_orchard_coverage": 0.8695652173913043,
+    "train_candidate_orchard_share": 0.0686468848159556,
+    "ap_diff_ci": [
+      2.8366046049351876,
+      6.285551001960498
+    ],
+    "meta": {
+      "ap": 31.805916753811836,
+      "acc_first": {
+        "accuracy": 82.6824656909085,
+        "orchard_precision": 27.659574468085108,
+        "orchard_recall": 35.32608695652174
+      }
+    },
+    "verifier": {
+      "ap": 36.221530239451006,
+      "acc_first": {
+        "accuracy": 82.78840825374058,
+        "orchard_precision": 40.447154471544714,
+        "orchard_recall": 36.05072463768116
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 1,
+    "variant": "share09",
+    "tau_train": 0.008315550163388252,
+    "tau_test": 0.011500167660415173,
+    "candidates": 11044,
+    "candidate_share": 0.09000228183981485,
+    "candidate_orchard_coverage": 0.8822463768115942,
+    "train_candidate_orchard_share": 0.05333821275817113,
+    "ap_diff_ci": [
+      2.24919454009226,
+      5.52006039576096
+    ],
+    "meta": {
+      "ap": 31.805916753811836,
+      "acc_first": {
+        "accuracy": 82.6824656909085,
+        "orchard_precision": 27.659574468085108,
+        "orchard_recall": 35.32608695652174
+      }
+    },
+    "verifier": {
+      "ap": 35.57861821882824,
+      "acc_first": {
+        "accuracy": 82.7835185969945,
+        "orchard_precision": 39.053254437869825,
+        "orchard_recall": 35.869565217391305
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 2,
+    "variant": "base",
+    "tau_train": 0.01438472792506218,
+    "tau_test": 0.01438472792506218,
+    "candidates": 10299,
+    "candidate_share": 0.08393095804674512,
+    "candidate_orchard_coverage": 0.8786231884057971,
+    "train_candidate_orchard_share": 0.06727837886305219,
+    "ap_diff_ci": [
+      2.8319234468613357,
+      6.059986783091844
+    ],
+    "meta": {
+      "ap": 31.807639457851117,
+      "acc_first": {
+        "accuracy": 82.69143006160968,
+        "orchard_precision": 28.88243831640058,
+        "orchard_recall": 36.05072463768116
+      }
+    },
+    "verifier": {
+      "ap": 36.26247434890802,
+      "acc_first": {
+        "accuracy": 82.80552205235192,
+        "orchard_precision": 42.98245614035088,
+        "orchard_recall": 35.507246376811594
+      }
+    }
+  },
+  {
+    "test": "frh04",
+    "seed": 2,
+    "variant": "share09",
+    "tau_train": 0.007929929532110691,
+    "tau_test": 0.012352928519248962,
+    "candidates": 11044,
+    "candidate_share": 0.09000228183981485,
+    "candidate_orchard_coverage": 0.8913043478260869,
+    "train_candidate_orchard_share": 0.05320097893460808,
+    "ap_diff_ci": [
+      2.3153911176343915,
+      5.597394142019118
+    ],
+    "meta": {
+      "ap": 31.807639457851117,
+      "acc_first": {
+        "accuracy": 82.69143006160968,
+        "orchard_precision": 28.88243831640058,
+        "orchard_recall": 36.05072463768116
+      }
+    },
+    "verifier": {
+      "ap": 35.72996890080006,
+      "acc_first": {
+        "accuracy": 82.78107376862144,
+        "orchard_precision": 39.0057361376673,
+        "orchard_recall": 36.95652173913043
+      }
+    }
+  }
+]

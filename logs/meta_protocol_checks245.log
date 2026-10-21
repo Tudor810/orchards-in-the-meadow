@@ -1,0 +1,252 @@
+Out-of-sample decode selection on frh04 (122,708 parcels, 552 orchards)
+Spatial cross-fitting: 10 km blocks (100 blocks), 5 folds, seed 0
+  fold 0: 24,407 parcels, 102 orchards
+  fold 1: 25,915 parcels, 117 orchards
+  fold 2: 23,834 parcels,  99 orchards
+  fold 3: 24,835 parcels, 137 orchards
+  fold 4: 23,717 parcels,  97 orchards
+Meta-classifier trained on frh01-frh03; decode config selected on the other folds only.
+Rules: accuracy_first (max acc | orchard>=35), orchard_first (max orchard | acc>=80.69), closest_stretch
+
+References (L1C eval set, 122,614 parcels; not paired with these rows):
+  MSResNet (stock transform, README):               acc=80.77 orchR=15.73 wheat=97.58
+  README best (XGB m=25, 64-d, selected on frh04):  acc=80.76 orchR=35.80 wheat=97.57
+
+=== Rule: accuracy_first ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+noexperts/seed42       |  82.66  47.28  20.86  |  82.66 [81.82,83.48]  47.28 [41.42,53.14]  20.86  28.95  98.25   61.99
+noexperts/seed1        |  82.55  47.83  20.40  |  82.55 [81.70,83.37]  47.83 [42.59,53.26]  20.40  28.60  98.20   61.89
+noexperts/seed2        |  82.61  48.55  20.47  |  82.61 [81.78,83.42]  48.55 [42.77,54.10]  20.47  28.80  98.23   61.94
+l2anet/seed42          |  81.98  51.81  16.16  |  81.98 [81.14,82.79]  51.81 [46.25,57.20]  16.16  24.63  97.99   61.12
+l2anet/seed1           |  81.99  52.90  15.71  |  81.99 [81.10,82.83]  52.90 [47.56,58.15]  15.71  24.22  97.93   61.08
+l2anet/seed2           |  81.86  55.98  15.33  |  81.86 [80.99,82.72]  55.98 [50.65,61.01]  15.33  24.07  97.92   61.04
+nol1cnone/seed42       |  73.73  44.38   6.11  |  73.73 [72.75,74.72]  44.38 [39.73,48.73]   6.11  10.75  85.37   52.88
+nol1cnone/seed1        |  73.68  43.48   6.05  |  73.68 [72.72,74.66]  43.48 [38.52,48.41]   6.05  10.63  84.74   52.79
+nol1cnone/seed2        |  73.73  42.57   6.09  |  73.73 [72.78,74.72]  42.57 [37.31,47.62]   6.09  10.66  85.13   52.83
+nol1cl1c/seed42        |  81.30  47.28  11.85  |  81.30 [80.39,82.20]  47.28 [42.06,52.64]  11.85  18.95  97.84   60.17
+nol1cl1c/seed1         |  81.38  44.93  11.30  |  81.38 [80.51,82.21]  44.93 [40.04,49.82]  11.30  18.06  97.81   60.17
+nol1cl1c/seed2         |  81.47  44.02  12.19  |  81.47 [80.64,82.30]  44.02 [38.58,49.45]  12.19  19.10  97.84   60.31
+noexpens/seed42        |  82.65  48.55  21.37  |  82.65 [81.80,83.46]  48.55 [42.98,54.12]  21.37  29.68  98.25   62.07
+noexpens/seed1         |  82.68  48.19  21.77  |  82.68 [81.86,83.48]  48.19 [42.75,53.79]  21.77  29.99  98.25   62.11
+noexpens/seed2         |  82.69  49.28  22.02  |  82.69 [81.83,83.50]  49.28 [44.09,54.46]  22.02  30.44  98.27   62.17
+noexpflat/seed42       |  82.68  48.01  21.47  |  82.68 [81.83,83.52]  48.01 [41.91,53.68]  21.47  29.68  98.21   62.07
+noexpflat/seed1        |  82.73  50.18  22.04  |  82.73 [81.89,83.53]  50.18 [44.37,56.03]  22.04  30.62  98.21   62.19
+noexpflat/seed2        |  82.67  49.64  21.68  |  82.67 [81.81,83.50]  49.64 [44.08,55.14]  21.68  30.18  98.15   62.13
+  noexperts over 3 seeds (mean+/-sd): accuracy=82.61+/-0.05  orchard_recall=47.89+/-0.64  orchard_precision=20.58+/-0.25  macro_f1=61.94+/-0.05
+  l2anet over 3 seeds (mean+/-sd): accuracy=81.94+/-0.07  orchard_recall=53.56+/-2.16  orchard_precision=15.73+/-0.42  macro_f1=61.08+/-0.04
+  nol1cnone over 3 seeds (mean+/-sd): accuracy=73.71+/-0.03  orchard_recall=43.48+/-0.91  orchard_precision=6.09+/-0.03  macro_f1=52.83+/-0.04
+  nol1cl1c over 3 seeds (mean+/-sd): accuracy=81.38+/-0.09  orchard_recall=45.41+/-1.68  orchard_precision=11.78+/-0.45  macro_f1=60.22+/-0.08
+  noexpens over 3 seeds (mean+/-sd): accuracy=82.67+/-0.02  orchard_recall=48.67+/-0.55  orchard_precision=21.72+/-0.33  macro_f1=62.12+/-0.05
+  noexpflat over 3 seeds (mean+/-sd): accuracy=82.70+/-0.03  orchard_recall=49.28+/-1.13  orchard_precision=21.73+/-0.28  macro_f1=62.13+/-0.06
+  noexperts/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexperts/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexperts/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  l2anet/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  l2anet/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  l2anet/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cnone/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cnone/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cnone/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cl1c/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cl1c/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cl1c/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpens/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpens/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpens/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpflat/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpflat/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  noexpflat/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  Paired differences (block bootstrap, same resamples):
+    l2anet/seed42 - noexperts/seed42: accuracy -0.68 [-0.86,-0.51] P(>0)=0.00 | orchard_recall +4.53 [+1.83,+7.41] P(>0)=1.00 | orchard_f1 -4.32 [-6.59,-2.29] P(>0)=0.00 | macro_f1 -0.87 [-1.23,-0.64] P(>0)=0.00
+    l2anet/seed1 - noexperts/seed1: accuracy -0.57 [-0.76,-0.39] P(>0)=0.00 | orchard_recall +5.07 [+1.96,+8.32] P(>0)=1.00 | orchard_f1 -4.38 [-6.49,-2.27] P(>0)=0.00 | macro_f1 -0.82 [-1.16,-0.57] P(>0)=0.00
+    l2anet/seed2 - noexperts/seed2: accuracy -0.75 [-0.95,-0.55] P(>0)=0.00 | orchard_recall +7.43 [+4.23,+10.76] P(>0)=1.00 | orchard_f1 -4.74 [-7.13,-2.49] P(>0)=0.00 | macro_f1 -0.90 [-1.29,-0.64] P(>0)=0.00
+    nol1cl1c/seed42 - nol1cnone/seed42: accuracy +7.57 [+7.05,+8.09] P(>0)=1.00 | orchard_recall +2.90 [-2.47,+8.16] P(>0)=0.84 | orchard_f1 +8.20 [+5.97,+10.76] P(>0)=1.00 | macro_f1 +7.30 [+6.77,+8.72] P(>0)=1.00
+    nol1cl1c/seed1 - nol1cnone/seed1: accuracy +7.69 [+7.16,+8.27] P(>0)=1.00 | orchard_recall +1.45 [-3.70,+6.75] P(>0)=0.71 | orchard_f1 +7.43 [+5.52,+9.58] P(>0)=1.00 | macro_f1 +7.38 [+6.87,+8.81] P(>0)=1.00
+    nol1cl1c/seed2 - nol1cnone/seed2: accuracy +7.74 [+7.24,+8.28] P(>0)=1.00 | orchard_recall +1.45 [-4.16,+6.87] P(>0)=0.68 | orchard_f1 +8.44 [+6.10,+10.82] P(>0)=1.00 | macro_f1 +7.47 [+6.98,+8.92] P(>0)=1.00
+    l2anet/seed42 - nol1cnone/seed42: accuracy +8.25 [+7.77,+8.75] P(>0)=1.00 | orchard_recall +7.43 [+2.38,+12.66] P(>0)=1.00 | orchard_f1 +13.89 [+11.35,+16.70] P(>0)=1.00 | macro_f1 +8.24 [+7.75,+9.76] P(>0)=1.00
+    l2anet/seed1 - nol1cnone/seed1: accuracy +8.30 [+7.85,+8.82] P(>0)=1.00 | orchard_recall +9.42 [+3.98,+15.14] P(>0)=1.00 | orchard_f1 +13.59 [+11.33,+15.90] P(>0)=1.00 | macro_f1 +8.29 [+7.81,+9.76] P(>0)=1.00
+    l2anet/seed2 - nol1cnone/seed2: accuracy +8.13 [+7.67,+8.61] P(>0)=1.00 | orchard_recall +13.41 [+7.69,+19.48] P(>0)=1.00 | orchard_f1 +13.41 [+11.02,+15.96] P(>0)=1.00 | macro_f1 +8.20 [+7.75,+9.70] P(>0)=1.00
+    l2anet/seed42 - nol1cl1c/seed42: accuracy +0.68 [+0.32,+1.10] P(>0)=1.00 | orchard_recall +4.53 [+0.36,+8.58] P(>0)=0.98 | orchard_f1 +5.69 [+3.74,+7.66] P(>0)=1.00 | macro_f1 +0.94 [+0.65,+1.38] P(>0)=1.00
+    l2anet/seed1 - nol1cl1c/seed1: accuracy +0.61 [+0.37,+0.85] P(>0)=1.00 | orchard_recall +7.97 [+4.07,+11.94] P(>0)=1.00 | orchard_f1 +6.16 [+3.96,+8.28] P(>0)=1.00 | macro_f1 +0.90 [+0.63,+1.27] P(>0)=1.00
+    l2anet/seed2 - nol1cl1c/seed2: accuracy +0.39 [+0.11,+0.65] P(>0)=1.00 | orchard_recall +11.96 [+7.00,+17.09] P(>0)=1.00 | orchard_f1 +4.97 [+2.71,+7.38] P(>0)=1.00 | macro_f1 +0.73 [+0.44,+1.12] P(>0)=1.00
+    noexpens/seed42 - noexperts/seed42: accuracy -0.01 [-0.10,+0.08] P(>0)=0.42 | orchard_recall +1.27 [-0.90,+3.42] P(>0)=0.85 | orchard_f1 +0.73 [-0.57,+2.04] P(>0)=0.87 | macro_f1 +0.08 [-0.08,+0.25] P(>0)=0.86
+    noexpens/seed1 - noexperts/seed1: accuracy +0.13 [+0.03,+0.25] P(>0)=0.99 | orchard_recall +0.36 [-1.30,+1.97] P(>0)=0.64 | orchard_f1 +1.39 [+0.32,+2.49] P(>0)=1.00 | macro_f1 +0.22 [+0.09,+0.39] P(>0)=1.00
+    noexpens/seed2 - noexperts/seed2: accuracy +0.08 [-0.03,+0.19] P(>0)=0.91 | orchard_recall +0.72 [-1.37,+2.95] P(>0)=0.73 | orchard_f1 +1.64 [+0.53,+2.76] P(>0)=1.00 | macro_f1 +0.23 [+0.10,+0.38] P(>0)=1.00
+    noexpflat/seed42 - noexperts/seed42: accuracy +0.02 [-0.08,+0.13] P(>0)=0.65 | orchard_recall +0.72 [-1.19,+2.62] P(>0)=0.75 | orchard_f1 +0.72 [-0.54,+2.01] P(>0)=0.87 | macro_f1 +0.08 [-0.07,+0.25] P(>0)=0.86
+    noexpflat/seed1 - noexperts/seed1: accuracy +0.18 [+0.07,+0.28] P(>0)=1.00 | orchard_recall +2.36 [+0.00,+4.96] P(>0)=0.97 | orchard_f1 +2.02 [+0.48,+3.57] P(>0)=1.00 | macro_f1 +0.29 [+0.12,+0.50] P(>0)=1.00
+    noexpflat/seed2 - noexperts/seed2: accuracy +0.06 [-0.05,+0.17] P(>0)=0.87 | orchard_recall +1.09 [-1.37,+3.54] P(>0)=0.78 | orchard_f1 +1.37 [+0.08,+2.70] P(>0)=0.98 | macro_f1 +0.19 [+0.03,+0.39] P(>0)=0.99
+
+=== Rule: orchard_first ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+noexperts/seed42       |  80.97  75.72   8.14  |  80.86 [79.97,81.77]  77.17 [72.31,82.31]   7.88  14.30  98.24   59.99
+noexperts/seed1        |  80.77  75.54   7.76  |  80.85 [79.95,81.76]  75.18 [70.53,80.07]   7.94  14.36  98.15   59.97
+noexperts/seed2        |  80.78  76.63   7.67  |  80.83 [79.91,81.76]  75.72 [71.40,80.23]   7.85  14.22  98.21   59.95
+l2anet/seed42          |  80.84  70.11   8.64  |  80.76 [79.88,81.61]  70.47 [65.23,75.62]   8.50  15.18  97.94   59.80
+l2anet/seed1           |  80.79  71.20   8.47  |  80.76 [79.85,81.65]  71.01 [66.11,75.95]   8.36  14.96  97.90   59.79
+l2anet/seed2           |  80.79  71.20   8.65  |  80.85 [79.95,81.76]  70.47 [65.42,75.46]   8.86  15.74  97.90   59.90
+nol1cnone/seed42       |  73.73  44.38   6.11  |  73.73 [72.75,74.72]  44.38 [39.73,48.73]   6.11  10.75  85.37   52.88
+nol1cnone/seed1        |  73.68  43.48   6.05  |  73.68 [72.72,74.66]  43.48 [38.52,48.41]   6.05  10.63  84.74   52.79
+nol1cnone/seed2        |  73.73  42.57   6.09  |  73.73 [72.78,74.72]  42.57 [37.31,47.62]   6.09  10.66  85.13   52.83
+nol1cl1c/seed42        |  80.76  56.88   8.97  |  80.88 [79.97,81.79]  55.25 [50.09,60.13]   9.48  16.18  97.81   59.77
+nol1cl1c/seed1         |  80.87  55.43   8.83  |  80.80 [79.92,81.64]  56.88 [51.59,62.34]   8.74  15.16  97.81   59.71
+nol1cl1c/seed2         |  80.71  58.88   8.40  |  80.84 [79.99,81.69]  57.79 [53.17,62.24]   8.97  15.52  97.82   59.79
+noexpens/seed42        |  80.97  76.63   8.18  |  80.84 [79.94,81.73]  78.44 [73.66,83.24]   7.98  14.49  98.21   60.00
+noexpens/seed1         |  81.01  75.72   8.28  |  80.92 [80.02,81.81]  76.09 [71.40,81.00]   8.03  14.52  98.21   60.02
+noexpens/seed2         |  80.95  77.54   8.25  |  80.86 [79.98,81.76]  78.08 [73.34,82.88]   8.00  14.51  98.21   60.02
+noexpflat/seed42       |  80.74  78.80   7.60  |  80.91 [79.96,81.84]  78.62 [74.10,83.19]   8.01  14.54  98.18   60.06
+noexpflat/seed1        |  81.08  76.63   8.39  |  80.87 [79.94,81.79]  77.17 [72.30,82.06]   7.81  14.19  98.17   59.99
+noexpflat/seed2        |  81.05  77.54   8.51  |  80.92 [80.01,81.85]  78.26 [74.03,82.73]   8.05  14.60  98.15   60.04
+  noexperts over 3 seeds (mean+/-sd): accuracy=80.85+/-0.02  orchard_recall=76.03+/-1.03  orchard_precision=7.89+/-0.05  macro_f1=59.97+/-0.02
+  l2anet over 3 seeds (mean+/-sd): accuracy=80.79+/-0.05  orchard_recall=70.65+/-0.31  orchard_precision=8.58+/-0.26  macro_f1=59.83+/-0.06
+  nol1cnone over 3 seeds (mean+/-sd): accuracy=73.71+/-0.03  orchard_recall=43.48+/-0.91  orchard_precision=6.09+/-0.03  macro_f1=52.83+/-0.04
+  nol1cl1c over 3 seeds (mean+/-sd): accuracy=80.84+/-0.04  orchard_recall=56.64+/-1.29  orchard_precision=9.06+/-0.38  macro_f1=59.76+/-0.04
+  noexpens over 3 seeds (mean+/-sd): accuracy=80.87+/-0.04  orchard_recall=77.54+/-1.27  orchard_precision=8.00+/-0.02  macro_f1=60.01+/-0.01
+  noexpflat over 3 seeds (mean+/-sd): accuracy=80.90+/-0.02  orchard_recall=78.02+/-0.75  orchard_precision=7.96+/-0.13  macro_f1=60.03+/-0.03
+  noexperts/seed42: naive pick geo_mean m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=1.5 b_m=0.25 x4; arith_xgb0.7 m=1 b_o=2 b_m=0 x1
+  noexperts/seed1: naive pick geo_mean m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=1.5 b_m=0.25 x4; geo_mean m=1 b_o=1.5 b_m=0 x1
+  noexperts/seed2: naive pick arith_xgb0.7 m=1 b_o=1.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x3; geo_mean m=1 b_o=1.5 b_m=0 x1; geo_mean m=1 b_o=1.5 b_m=0.25 x1
+  l2anet/seed42: naive pick geo_mean m=1 b_o=1 b_m=0; fold picks geo_mean m=1 b_o=1 b_m=0 x3; geo_mean m=1 b_o=1 b_m=0.25 x1; arith_xgb0.7 m=1 b_o=1 b_m=0 x1
+  l2anet/seed1: naive pick geo_mean m=1 b_o=1 b_m=0; fold picks geo_mean m=1 b_o=1 b_m=0 x3; arith_xgb0.7 m=1 b_o=1 b_m=0.25 x1; arith_xgb0.7 m=1 b_o=1 b_m=0 x1
+  l2anet/seed2: naive pick arith_xgb0.7 m=1 b_o=1 b_m=0; fold picks arith_xgb0.7 m=1 b_o=1 b_m=0 x2; geo_mean m=1 b_o=1 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  nol1cnone/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cnone/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cnone/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  nol1cl1c/seed42: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0 x3; geo_mean m=1 b_o=0 b_m=0 x2
+  nol1cl1c/seed1: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x2
+  nol1cl1c/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x3
+  noexpens/seed42: naive pick arith_xgb0.7 m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=2 b_m=0 x2; arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x3
+  noexpens/seed1: naive pick geo_mean m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=1.5 b_m=0.25 x4; geo_mean m=1 b_o=2 b_m=0 x1
+  noexpens/seed2: naive pick geo_mean m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=1.5 b_m=0.25 x4; geo_mean m=1 b_o=2 b_m=0 x1
+  noexpflat/seed42: naive pick geo_mean m=1 b_o=2 b_m=0; fold picks geo_mean m=1 b_o=2 b_m=0 x3; arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x2
+  noexpflat/seed1: naive pick arith_xgb0.7 m=1 b_o=1.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x2; geo_mean m=1 b_o=2 b_m=0 x1; geo_mean m=1 b_o=1.5 b_m=0.25 x1; arith_xgb0.7 m=1 b_o=2 b_m=0 x1
+  noexpflat/seed2: naive pick geo_mean m=1 b_o=1.5 b_m=0.25; fold picks geo_mean m=1 b_o=2 b_m=0 x1; arith_xgb0.7 m=1 b_o=2 b_m=0 x1; geo_mean m=1 b_o=1.5 b_m=0.25 x3
+  Paired differences (block bootstrap, same resamples):
+    l2anet/seed42 - noexperts/seed42: accuracy -0.10 [-0.29,+0.09] P(>0)=0.14 | orchard_recall -6.70 [-9.17,-4.26] P(>0)=0.00 | orchard_f1 +0.88 [+0.17,+1.56] P(>0)=0.99 | macro_f1 -0.19 [-0.36,-0.04] P(>0)=0.01
+    l2anet/seed1 - noexperts/seed1: accuracy -0.09 [-0.29,+0.10] P(>0)=0.17 | orchard_recall -4.17 [-7.12,-1.35] P(>0)=0.00 | orchard_f1 +0.60 [-0.15,+1.34] P(>0)=0.94 | macro_f1 -0.18 [-0.37,-0.03] P(>0)=0.01
+    l2anet/seed2 - noexperts/seed2: accuracy +0.02 [-0.20,+0.25] P(>0)=0.55 | orchard_recall -5.25 [-8.13,-2.43] P(>0)=0.00 | orchard_f1 +1.52 [+0.76,+2.32] P(>0)=1.00 | macro_f1 -0.05 [-0.22,+0.12] P(>0)=0.25
+    nol1cl1c/seed42 - nol1cnone/seed42: accuracy +7.15 [+6.62,+7.67] P(>0)=1.00 | orchard_recall +10.87 [+5.44,+16.18] P(>0)=1.00 | orchard_f1 +5.43 [+3.67,+7.48] P(>0)=1.00 | macro_f1 +6.89 [+6.42,+8.24] P(>0)=1.00
+    nol1cl1c/seed1 - nol1cnone/seed1: accuracy +7.12 [+6.58,+7.69] P(>0)=1.00 | orchard_recall +13.41 [+7.64,+19.43] P(>0)=1.00 | orchard_f1 +4.53 [+3.02,+6.17] P(>0)=1.00 | macro_f1 +6.92 [+6.43,+8.27] P(>0)=1.00
+    nol1cl1c/seed2 - nol1cnone/seed2: accuracy +7.11 [+6.61,+7.66] P(>0)=1.00 | orchard_recall +15.22 [+10.07,+20.34] P(>0)=1.00 | orchard_f1 +4.86 [+3.41,+6.46] P(>0)=1.00 | macro_f1 +6.96 [+6.48,+8.32] P(>0)=1.00
+    l2anet/seed42 - nol1cnone/seed42: accuracy +7.04 [+6.56,+7.56] P(>0)=1.00 | orchard_recall +26.09 [+21.30,+30.97] P(>0)=1.00 | orchard_f1 +4.43 [+3.19,+5.68] P(>0)=1.00 | macro_f1 +6.93 [+6.53,+8.20] P(>0)=1.00
+    l2anet/seed1 - nol1cnone/seed1: accuracy +7.07 [+6.62,+7.60] P(>0)=1.00 | orchard_recall +27.54 [+22.70,+32.91] P(>0)=1.00 | orchard_f1 +4.33 [+3.20,+5.46] P(>0)=1.00 | macro_f1 +7.00 [+6.63,+8.26] P(>0)=1.00
+    l2anet/seed2 - nol1cnone/seed2: accuracy +7.12 [+6.68,+7.59] P(>0)=1.00 | orchard_recall +27.90 [+22.14,+33.75] P(>0)=1.00 | orchard_f1 +5.08 [+3.86,+6.45] P(>0)=1.00 | macro_f1 +7.06 [+6.66,+8.34] P(>0)=1.00
+    l2anet/seed42 - nol1cl1c/seed42: accuracy -0.12 [-0.48,+0.30] P(>0)=0.27 | orchard_recall +15.22 [+10.93,+20.04] P(>0)=1.00 | orchard_f1 -1.00 [-2.45,+0.36] P(>0)=0.07 | macro_f1 +0.03 [-0.25,+0.35] P(>0)=0.57
+    l2anet/seed1 - nol1cl1c/seed1: accuracy -0.04 [-0.32,+0.24] P(>0)=0.38 | orchard_recall +14.13 [+10.44,+18.28] P(>0)=1.00 | orchard_f1 -0.20 [-1.53,+0.99] P(>0)=0.37 | macro_f1 +0.08 [-0.17,+0.32] P(>0)=0.74
+    l2anet/seed2 - nol1cl1c/seed2: accuracy +0.01 [-0.32,+0.32] P(>0)=0.51 | orchard_recall +12.68 [+8.41,+17.24] P(>0)=1.00 | orchard_f1 +0.22 [-1.02,+1.46] P(>0)=0.64 | macro_f1 +0.11 [-0.15,+0.38] P(>0)=0.79
+    noexpens/seed42 - noexperts/seed42: accuracy -0.02 [-0.12,+0.08] P(>0)=0.32 | orchard_recall +1.27 [-0.82,+3.47] P(>0)=0.85 | orchard_f1 +0.19 [-0.25,+0.66] P(>0)=0.79 | macro_f1 +0.01 [-0.06,+0.09] P(>0)=0.62
+    noexpens/seed1 - noexperts/seed1: accuracy +0.07 [-0.05,+0.18] P(>0)=0.85 | orchard_recall +0.91 [-1.09,+2.96] P(>0)=0.79 | orchard_f1 +0.17 [-0.27,+0.59] P(>0)=0.77 | macro_f1 +0.05 [-0.04,+0.15] P(>0)=0.87
+    noexpens/seed2 - noexperts/seed2: accuracy +0.03 [-0.09,+0.15] P(>0)=0.69 | orchard_recall +2.36 [+0.40,+4.23] P(>0)=0.99 | orchard_f1 +0.29 [-0.21,+0.74] P(>0)=0.88 | macro_f1 +0.07 [-0.01,+0.15] P(>0)=0.96
+    noexpflat/seed42 - noexperts/seed42: accuracy +0.04 [-0.09,+0.18] P(>0)=0.72 | orchard_recall +1.45 [-0.60,+3.50] P(>0)=0.90 | orchard_f1 +0.24 [-0.29,+0.85] P(>0)=0.79 | macro_f1 +0.07 [-0.02,+0.17] P(>0)=0.92
+    noexpflat/seed1 - noexperts/seed1: accuracy +0.02 [-0.16,+0.18] P(>0)=0.56 | orchard_recall +1.99 [-0.18,+4.15] P(>0)=0.96 | orchard_f1 -0.17 [-0.70,+0.38] P(>0)=0.26 | macro_f1 +0.02 [-0.10,+0.15] P(>0)=0.64
+    noexpflat/seed2 - noexperts/seed2: accuracy +0.09 [-0.04,+0.21] P(>0)=0.91 | orchard_recall +2.54 [+0.54,+4.43] P(>0)=0.99 | orchard_f1 +0.38 [-0.09,+0.91] P(>0)=0.94 | macro_f1 +0.09 [+0.01,+0.19] P(>0)=0.98
+
+=== Rule: closest_stretch ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+noexperts/seed42       |  82.01  61.96  12.37  |  82.10 [81.24,82.95]  59.60 [54.05,65.15]  12.77  21.04  98.30   60.97
+noexperts/seed1        |  81.93  62.14  12.43  |  81.99 [81.11,82.86]  61.05 [55.72,66.90]  12.90  21.30  98.18   60.96
+noexperts/seed2        |  82.14  61.05  14.04  |  82.12 [81.27,82.96]  61.23 [56.36,66.09]  13.90  22.66  98.21   61.13
+l2anet/seed42          |  81.41  63.41  11.00  |  81.45 [80.60,82.30]  61.05 [55.34,66.77]  11.23  18.96  97.94   60.35
+l2anet/seed1           |  81.60  60.51  12.21  |  81.52 [80.62,82.39]  61.23 [55.94,66.55]  11.67  19.61  97.91   60.44
+l2anet/seed2           |  81.65  60.14  13.29  |  81.63 [80.75,82.51]  59.96 [55.06,64.82]  13.27  21.73  97.92   60.70
+nol1cnone/seed42       |  72.50  59.24   4.77  |  71.92 [70.93,72.93]  63.04 [57.87,67.48]   4.38   8.19  85.73   52.03
+nol1cnone/seed1        |  71.55  64.67   4.16  |  71.46 [70.45,72.50]  64.31 [59.66,68.58]   4.18   7.85  85.03   51.74
+nol1cnone/seed2        |  71.80  65.58   4.40  |  71.75 [70.77,72.75]  65.22 [60.43,69.49]   4.43   8.30  85.82   51.93
+nol1cl1c/seed42        |  80.42  61.23   8.21  |  80.42 [79.47,81.39]  61.23 [57.22,65.09]   8.21  14.48  97.77   59.45
+nol1cl1c/seed1         |  80.53  62.32   8.08  |  80.58 [79.72,81.43]  61.41 [56.31,66.56]   8.09  14.29  97.81   59.57
+nol1cl1c/seed2         |  80.57  59.96   8.11  |  80.49 [79.64,81.33]  60.69 [56.28,65.05]   7.84  13.89  97.82   59.49
+noexpens/seed42        |  82.08  62.50  12.93  |  82.14 [81.30,82.97]  60.69 [55.75,65.58]  13.13  21.59  98.24   61.05
+noexpens/seed1         |  82.08  62.68  13.11  |  82.14 [81.31,82.99]  61.41 [56.51,66.27]  13.65  22.34  98.29   61.12
+noexpens/seed2         |  82.21  60.51  13.86  |  82.15 [81.29,83.00]  60.69 [55.58,65.65]  13.53  22.13  98.30   61.12
+noexpflat/seed42       |  82.26  63.04  15.32  |  82.26 [81.39,83.13]  63.04 [57.63,68.32]  15.32  24.65  98.20   61.43
+noexpflat/seed1        |  82.27  61.59  14.93  |  82.28 [81.40,83.12]  60.51 [55.13,65.80]  14.92  23.94  98.18   61.34
+noexpflat/seed2        |  82.24  61.05  14.63  |  82.20 [81.30,83.06]  61.78 [56.45,66.90]  14.21  23.11  98.18   61.23
+  noexperts over 3 seeds (mean+/-sd): accuracy=82.07+/-0.07  orchard_recall=60.63+/-0.89  orchard_precision=13.19+/-0.62  macro_f1=61.02+/-0.10
+  l2anet over 3 seeds (mean+/-sd): accuracy=81.54+/-0.09  orchard_recall=60.75+/-0.69  orchard_precision=12.05+/-1.07  macro_f1=60.50+/-0.18
+  nol1cnone over 3 seeds (mean+/-sd): accuracy=71.71+/-0.23  orchard_recall=64.19+/-1.09  orchard_precision=4.33+/-0.13  macro_f1=51.90+/-0.15
+  nol1cl1c over 3 seeds (mean+/-sd): accuracy=80.50+/-0.08  orchard_recall=61.11+/-0.38  orchard_precision=8.05+/-0.19  macro_f1=59.51+/-0.06
+  noexpens over 3 seeds (mean+/-sd): accuracy=82.15+/-0.01  orchard_recall=60.93+/-0.42  orchard_precision=13.44+/-0.28  macro_f1=61.10+/-0.04
+  noexpflat over 3 seeds (mean+/-sd): accuracy=82.25+/-0.05  orchard_recall=61.78+/-1.27  orchard_precision=14.82+/-0.56  macro_f1=61.33+/-0.10
+  noexperts/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x2; geo_mean m=1 b_o=0.5 b_m=0.25 x2
+  noexperts/seed1: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0 x2; geo_mean m=1 b_o=0.5 b_m=0.25 x3
+  noexperts/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x4; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1
+  l2anet/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x3; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x1; geo_mean m=1 b_o=0 b_m=0.25 x1
+  l2anet/seed1: naive pick geo_mean m=1 b_o=0 b_m=0.25; fold picks geo_mean m=1 b_o=0 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x2; geo_mean m=1 b_o=0.5 b_m=0 x1
+  l2anet/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0.25; fold picks geo_mean m=1 b_o=0 b_m=0 x1; arith_xgb0.7 m=1 b_o=0 b_m=0.25 x4
+  nol1cnone/seed42: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x2
+  nol1cnone/seed1: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x4
+  nol1cnone/seed2: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x4; geo_mean m=1 b_o=0.5 b_m=0 x1
+  nol1cl1c/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x5
+  nol1cl1c/seed1: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3; geo_mean m=1 b_o=0.5 b_m=0 x2
+  nol1cl1c/seed2: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3
+  noexpens/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1; geo_mean m=1 b_o=0.5 b_m=0.25 x3; geo_mean m=1 b_o=0.5 b_m=0 x1
+  noexpens/seed1: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3; geo_mean m=1 b_o=0.5 b_m=0.25 x2
+  noexpens/seed2: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x4; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  noexpflat/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x5
+  noexpflat/seed1: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x4; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x1
+  noexpflat/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x4; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  Paired differences (block bootstrap, same resamples):
+    l2anet/seed42 - noexperts/seed42: accuracy -0.65 [-0.81,-0.49] P(>0)=0.00 | orchard_recall +1.45 [-1.34,+4.52] P(>0)=0.83 | orchard_f1 -2.07 [-3.49,-0.77] P(>0)=0.00 | macro_f1 -0.62 [-0.88,-0.46] P(>0)=0.00
+    l2anet/seed1 - noexperts/seed1: accuracy -0.47 [-0.67,-0.28] P(>0)=0.00 | orchard_recall +0.18 [-2.53,+2.82] P(>0)=0.51 | orchard_f1 -1.70 [-3.14,-0.38] P(>0)=0.01 | macro_f1 -0.51 [-0.78,-0.32] P(>0)=0.00
+    l2anet/seed2 - noexperts/seed2: accuracy -0.49 [-0.67,-0.30] P(>0)=0.00 | orchard_recall -1.27 [-4.40,+1.98] P(>0)=0.21 | orchard_f1 -0.94 [-2.36,+0.44] P(>0)=0.10 | macro_f1 -0.44 [-0.68,-0.24] P(>0)=0.00
+    nol1cl1c/seed42 - nol1cnone/seed42: accuracy +8.51 [+7.93,+9.04] P(>0)=1.00 | orchard_recall -1.81 [-6.67,+3.23] P(>0)=0.24 | orchard_f1 +6.28 [+4.96,+7.75] P(>0)=1.00 | macro_f1 +7.42 [+6.94,+8.80] P(>0)=1.00
+    nol1cl1c/seed1 - nol1cnone/seed1: accuracy +9.11 [+8.56,+9.71] P(>0)=1.00 | orchard_recall -2.90 [-8.32,+2.28] P(>0)=0.13 | orchard_f1 +6.44 [+5.09,+8.07] P(>0)=1.00 | macro_f1 +7.83 [+7.37,+9.28] P(>0)=1.00
+    nol1cl1c/seed2 - nol1cnone/seed2: accuracy +8.74 [+8.22,+9.31] P(>0)=1.00 | orchard_recall -4.53 [-8.49,-0.65] P(>0)=0.01 | orchard_f1 +5.59 [+4.31,+6.95] P(>0)=1.00 | macro_f1 +7.57 [+7.10,+9.00] P(>0)=1.00
+    l2anet/seed42 - nol1cnone/seed42: accuracy +9.54 [+9.03,+10.02] P(>0)=1.00 | orchard_recall -1.99 [-7.34,+3.56] P(>0)=0.24 | orchard_f1 +10.77 [+9.06,+12.55] P(>0)=1.00 | macro_f1 +8.32 [+7.89,+9.76] P(>0)=1.00
+    l2anet/seed1 - nol1cnone/seed1: accuracy +10.06 [+9.58,+10.58] P(>0)=1.00 | orchard_recall -3.08 [-8.09,+1.76] P(>0)=0.10 | orchard_f1 +11.76 [+9.78,+13.75] P(>0)=1.00 | macro_f1 +8.71 [+8.29,+10.20] P(>0)=1.00
+    l2anet/seed2 - nol1cnone/seed2: accuracy +9.88 [+9.42,+10.40] P(>0)=1.00 | orchard_recall -5.25 [-10.26,-0.75] P(>0)=0.01 | orchard_f1 +13.42 [+11.30,+15.77] P(>0)=1.00 | macro_f1 +8.77 [+8.32,+10.33] P(>0)=1.00
+    l2anet/seed42 - nol1cl1c/seed42: accuracy +1.03 [+0.63,+1.51] P(>0)=1.00 | orchard_recall -0.18 [-4.68,+4.09] P(>0)=0.46 | orchard_f1 +4.49 [+3.04,+5.92] P(>0)=1.00 | macro_f1 +0.90 [+0.64,+1.29] P(>0)=1.00
+    l2anet/seed1 - nol1cl1c/seed1: accuracy +0.94 [+0.68,+1.20] P(>0)=1.00 | orchard_recall -0.18 [-3.83,+3.65] P(>0)=0.45 | orchard_f1 +5.31 [+3.95,+6.72] P(>0)=1.00 | macro_f1 +0.87 [+0.66,+1.19] P(>0)=1.00
+    l2anet/seed2 - nol1cl1c/seed2: accuracy +1.14 [+0.86,+1.41] P(>0)=1.00 | orchard_recall -0.72 [-4.61,+3.24] P(>0)=0.35 | orchard_f1 +7.83 [+6.26,+9.67] P(>0)=1.00 | macro_f1 +1.20 [+0.97,+1.58] P(>0)=1.00
+    noexpens/seed42 - noexperts/seed42: accuracy +0.04 [-0.06,+0.15] P(>0)=0.77 | orchard_recall +1.09 [-1.04,+3.56] P(>0)=0.81 | orchard_f1 +0.55 [-0.28,+1.38] P(>0)=0.91 | macro_f1 +0.08 [-0.03,+0.18] P(>0)=0.92
+    noexpens/seed1 - noexperts/seed1: accuracy +0.15 [+0.03,+0.29] P(>0)=0.99 | orchard_recall +0.36 [-1.96,+2.58] P(>0)=0.59 | orchard_f1 +1.04 [+0.28,+1.78] P(>0)=0.99 | macro_f1 +0.16 [+0.05,+0.29] P(>0)=1.00
+    noexpens/seed2 - noexperts/seed2: accuracy +0.03 [-0.11,+0.16] P(>0)=0.67 | orchard_recall -0.54 [-3.08,+1.84] P(>0)=0.30 | orchard_f1 -0.53 [-1.43,+0.31] P(>0)=0.09 | macro_f1 -0.02 [-0.16,+0.12] P(>0)=0.39
+    noexpflat/seed42 - noexperts/seed42: accuracy +0.17 [+0.06,+0.26] P(>0)=1.00 | orchard_recall +3.44 [+1.19,+5.71] P(>0)=1.00 | orchard_f1 +3.61 [+2.68,+4.72] P(>0)=1.00 | macro_f1 +0.45 [+0.34,+0.63] P(>0)=1.00
+    noexpflat/seed1 - noexperts/seed1: accuracy +0.29 [+0.18,+0.39] P(>0)=1.00 | orchard_recall -0.54 [-2.98,+1.86] P(>0)=0.31 | orchard_f1 +2.64 [+1.77,+3.60] P(>0)=1.00 | macro_f1 +0.39 [+0.28,+0.55] P(>0)=1.00
+    noexpflat/seed2 - noexperts/seed2: accuracy +0.07 [-0.04,+0.18] P(>0)=0.89 | orchard_recall +0.54 [-1.52,+2.52] P(>0)=0.66 | orchard_f1 +0.45 [-0.47,+1.46] P(>0)=0.81 | macro_f1 +0.09 [-0.03,+0.24] P(>0)=0.93
+
+Per-class (cross-fitted, accuracy_first, noexperts/seed42):
+  class        support   prec recall     F1
+  barley          5981  95.99  97.36  96.67
+  wheat          17009  98.38  98.25  98.31
+  rapeseed        3244  97.57  97.97  97.77
+  corn           31361  98.75  98.08  98.41
+  sunflower          2   0.00   0.00   0.00
+  orchards         552  20.86  47.28  28.95
+  nuts              11   0.00   0.00   0.00
+  perm_meadow    26134  62.44  67.02  64.65
+  temp_meadow    38414  75.64  70.76  73.12
+
+Per-class (cross-fitted, orchard_first, noexperts/seed42):
+  class        support   prec recall     F1
+  barley          5981  95.63  97.41  96.51
+  wheat          17009  98.32  98.24  98.28
+  rapeseed        3244  97.43  98.09  97.76
+  corn           31361  98.71  98.08  98.39
+  sunflower          2   0.00   0.00   0.00
+  orchards         552   7.88  77.17  14.30
+  nuts              11   0.00   0.00   0.00
+  perm_meadow    26134  62.93  62.53  62.73
+  temp_meadow    38414  76.87  67.63  71.95
+
+Orchard average precision (threshold-free, from blended probabilities; no selection):
+  noexperts/seed42       geo_mean m=1=33.84  arith_xgb0.7 m=1=33.69
+  noexperts/seed1        geo_mean m=1=33.86  arith_xgb0.7 m=1=33.77
+  noexperts/seed2        geo_mean m=1=34.23  arith_xgb0.7 m=1=34.07
+  l2anet/seed42          geo_mean m=1=31.57  arith_xgb0.7 m=1=31.30
+  l2anet/seed1           geo_mean m=1=31.50  arith_xgb0.7 m=1=31.12
+  l2anet/seed2           geo_mean m=1=31.18  arith_xgb0.7 m=1=30.93
+  nol1cnone/seed42       geo_mean m=1=6.92  arith_xgb0.7 m=1=6.68
+  nol1cnone/seed1        geo_mean m=1=6.76  arith_xgb0.7 m=1=6.53
+  nol1cnone/seed2        geo_mean m=1=6.60  arith_xgb0.7 m=1=6.49
+  nol1cl1c/seed42        geo_mean m=1=21.18  arith_xgb0.7 m=1=20.87
+  nol1cl1c/seed1         geo_mean m=1=22.68  arith_xgb0.7 m=1=22.59
+  nol1cl1c/seed2         geo_mean m=1=23.45  arith_xgb0.7 m=1=23.09
+  noexpens/seed42        geo_mean m=1=35.28  arith_xgb0.7 m=1=35.26
+  noexpens/seed1         geo_mean m=1=35.36  arith_xgb0.7 m=1=35.34
+  noexpens/seed2         geo_mean m=1=35.28  arith_xgb0.7 m=1=35.07
+  noexpflat/seed42       geo_mean m=1=35.67  arith_xgb0.7 m=1=35.78
+  noexpflat/seed1        geo_mean m=1=35.45  arith_xgb0.7 m=1=35.43
+  noexpflat/seed2        geo_mean m=1=35.82  arith_xgb0.7 m=1=35.95

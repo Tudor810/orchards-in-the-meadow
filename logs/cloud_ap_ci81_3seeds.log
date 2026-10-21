@@ -1,0 +1,12 @@
+orchard AP (geo_mean m=1), clear - all, paired block bootstrap:
+  seed 42: all=33.53 clear=34.63 diff=+1.10 [-0.60,+2.92] P(>0)=0.90
+  seed  1: all=32.92 clear=34.25 diff=+1.32 [-0.07,+2.58] P(>0)=0.97
+  seed  2: all=33.57 clear=34.57 diff=+1.00 [-0.54,+2.57] P(>0)=0.89
+
+orchard-first with accuracy >= 81 (cross-fitted, 95% block-bootstrap CI):
+  pheno         seed 42: acc=81.04 [80.17,81.92] orchR=63.95 [59.02,68.78] P(orchR<60)=0.059 P(acc<81)=0.47 wheat=97.95 orchF1=15.48
+  pheno         seed  1: acc=81.03 [80.15,81.92] orchR=64.67 [59.87,69.54] P(orchR<60)=0.030 P(acc<81)=0.48 wheat=98.03 orchF1=15.83
+  pheno         seed  2: acc=81.05 [80.17,81.92] orchR=62.50 [57.37,67.71] P(orchR<60)=0.164 P(acc<81)=0.47 wheat=97.97 orchF1=15.48
+  phenomsclear  seed 42: acc=81.09 [80.22,81.95] orchR=75.54 [70.57,80.40] P(orchR<60)=0.000 P(acc<81)=0.44 wheat=98.27 orchF1=15.40
+  phenomsclear  seed  1: acc=81.02 [80.14,81.92] orchR=74.64 [69.48,79.93] P(orchR<60)=0.000 P(acc<81)=0.49 wheat=98.22 orchF1=15.04
+  phenomsclear  seed  2: acc=81.03 [80.11,81.96] orchR=75.36 [71.01,79.74] P(orchR<60)=0.000 P(acc<81)=0.49 wheat=98.20 orchF1=15.27

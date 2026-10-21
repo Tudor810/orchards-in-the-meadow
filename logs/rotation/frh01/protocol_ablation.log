@@ -1,0 +1,144 @@
+Out-of-sample decode selection on frh01 (178,632 parcels, 937 orchards)
+Spatial cross-fitting: 10 km blocks (96 blocks), 5 folds, seed 0
+  fold 0: 36,546 parcels, 158 orchards
+  fold 1: 35,021 parcels, 185 orchards
+  fold 2: 36,285 parcels, 275 orchards
+  fold 3: 35,537 parcels, 175 orchards
+  fold 4: 35,243 parcels, 144 orchards
+Meta-classifier trained on frh01-frh03; decode config selected on the other folds only.
+Rules: accuracy_first (max acc | orchard>=35), orchard_first (max orchard | acc>=80.69), closest_stretch
+
+References (L1C eval set, 122,614 parcels; not paired with these rows):
+  MSResNet (stock transform, README):               acc=80.77 orchR=15.73 wheat=97.58
+  README best (XGB m=25, 64-d, selected on frh04):  acc=80.76 orchR=35.80 wheat=97.57
+
+=== Rule: accuracy_first ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+B/seed42               |  83.51  51.44  22.36  |  83.51 [82.76,84.26]  51.44 [45.05,57.79]  22.36  31.17  98.65   62.15
+B/seed1                |  83.55  51.87  22.45  |  83.55 [82.82,84.29]  51.87 [45.49,58.18]  22.45  31.33  98.65   62.18
+B/seed2                |  83.50  51.12  21.69  |  83.50 [82.76,84.24]  51.12 [44.62,57.50]  21.69  30.46  98.67   62.07
+A/seed42               |  82.14  47.17  13.95  |  82.14 [81.26,83.02]  47.17 [41.08,52.26]  13.95  21.53  98.32   60.43
+A/seed1                |  82.03  47.28  13.91  |  82.03 [81.15,82.94]  47.28 [41.02,52.73]  13.91  21.50  98.35   60.38
+A/seed2                |  82.05  47.39  14.06  |  82.05 [81.20,82.95]  47.39 [41.14,52.37]  14.06  21.68  98.33   60.40
+D/seed42               |  83.33  48.67  19.11  |  83.33 [82.58,84.10]  48.67 [42.30,54.99]  19.11  27.45  98.65   61.67
+D/seed1                |  83.37  49.31  19.17  |  83.37 [82.63,84.14]  49.31 [42.75,55.66]  19.17  27.61  98.62   61.70
+D/seed2                |  83.35  50.16  19.11  |  83.35 [82.60,84.11]  50.16 [43.47,56.56]  19.11  27.67  98.62   61.71
+  B over 3 seeds (mean+/-sd): accuracy=83.52+/-0.03  orchard_recall=51.48+/-0.37  orchard_precision=22.17+/-0.41  macro_f1=62.13+/-0.06
+  A over 3 seeds (mean+/-sd): accuracy=82.08+/-0.06  orchard_recall=47.28+/-0.11  orchard_precision=13.97+/-0.07  macro_f1=60.40+/-0.02
+  D over 3 seeds (mean+/-sd): accuracy=83.35+/-0.02  orchard_recall=49.38+/-0.75  orchard_precision=19.13+/-0.04  macro_f1=61.69+/-0.02
+  B/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  B/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  B/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  A/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  A/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  A/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  D/seed42: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  D/seed1: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  D/seed2: naive pick arith_xgb0.7 m=1 b_o=0 b_m=0; fold picks arith_xgb0.7 m=1 b_o=0 b_m=0 x5
+  Paired differences (block bootstrap, same resamples):
+    B/seed42 - A/seed42: accuracy +1.36 [+1.16,+1.58] P(>0)=1.00 | orchard_recall +4.27 [+0.09,+9.19] P(>0)=0.98 | orchard_f1 +9.64 [+7.56,+11.86] P(>0)=1.00 | macro_f1 +1.72 [+1.49,+2.21] P(>0)=1.00
+    B/seed1 - A/seed1: accuracy +1.51 [+1.27,+1.75] P(>0)=1.00 | orchard_recall +4.59 [+0.66,+9.21] P(>0)=0.99 | orchard_f1 +9.83 [+7.84,+11.91] P(>0)=1.00 | macro_f1 +1.80 [+1.59,+2.27] P(>0)=1.00
+    B/seed2 - A/seed2: accuracy +1.44 [+1.22,+1.66] P(>0)=1.00 | orchard_recall +3.74 [-0.43,+8.59] P(>0)=0.95 | orchard_f1 +8.78 [+6.60,+11.04] P(>0)=1.00 | macro_f1 +1.67 [+1.44,+2.13] P(>0)=1.00
+    B/seed42 - D/seed42: accuracy +0.18 [+0.09,+0.27] P(>0)=1.00 | orchard_recall +2.77 [+0.91,+4.83] P(>0)=1.00 | orchard_f1 +3.72 [+2.53,+4.89] P(>0)=1.00 | macro_f1 +0.48 [+0.34,+0.66] P(>0)=1.00
+    B/seed1 - D/seed1: accuracy +0.17 [+0.10,+0.25] P(>0)=1.00 | orchard_recall +2.56 [+0.85,+4.52] P(>0)=1.00 | orchard_f1 +3.73 [+2.67,+4.79] P(>0)=1.00 | macro_f1 +0.47 [+0.36,+0.65] P(>0)=1.00
+    B/seed2 - D/seed2: accuracy +0.14 [+0.05,+0.23] P(>0)=1.00 | orchard_recall +0.96 [-0.64,+2.65] P(>0)=0.86 | orchard_f1 +2.79 [+1.73,+3.78] P(>0)=1.00 | macro_f1 +0.36 [+0.24,+0.51] P(>0)=1.00
+
+=== Rule: orchard_first ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+B/seed42               |  80.84  80.15   6.64  |  80.84 [80.05,81.67]  80.15 [75.55,84.31]   6.64  12.27  98.63   59.45
+B/seed1                |  80.78  80.79   6.53  |  80.80 [80.04,81.62]  80.68 [76.04,84.93]   6.57  12.15  98.62   59.43
+B/seed2                |  80.78  81.54   6.61  |  80.86 [80.09,81.68]  81.22 [76.61,85.52]   6.75  12.46  98.63   59.48
+A/seed42               |  80.75  68.09   7.62  |  80.85 [79.95,81.76]  66.17 [60.45,71.20]   7.86  14.05  98.27   59.33
+A/seed1                |  80.72  67.13   8.25  |  80.83 [79.91,81.75]  66.17 [60.71,70.98]   8.20  14.58  98.28   59.35
+A/seed2                |  80.74  66.28   8.10  |  80.88 [79.98,81.78]  66.28 [61.01,71.03]   8.26  14.68  98.28   59.37
+D/seed42               |  80.74  78.44   6.41  |  80.89 [80.09,81.70]  76.84 [71.39,81.52]   6.64  12.22  98.63   59.43
+D/seed1                |  80.75  77.69   6.33  |  80.93 [80.14,81.74]  75.88 [70.57,80.49]   6.53  12.03  98.59   59.44
+D/seed2                |  81.22  74.81   7.10  |  81.01 [80.22,81.81]  76.52 [70.96,81.05]   6.77  12.45  98.60   59.51
+  B over 3 seeds (mean+/-sd): accuracy=80.83+/-0.03  orchard_recall=80.68+/-0.53  orchard_precision=6.65+/-0.09  macro_f1=59.45+/-0.02
+  A over 3 seeds (mean+/-sd): accuracy=80.85+/-0.02  orchard_recall=66.20+/-0.06  orchard_precision=8.10+/-0.21  macro_f1=59.35+/-0.02
+  D over 3 seeds (mean+/-sd): accuracy=80.94+/-0.06  orchard_recall=76.41+/-0.49  orchard_precision=6.65+/-0.12  macro_f1=59.46+/-0.04
+  B/seed42: naive pick arith_xgb0.7 m=1 b_o=2 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=2 b_m=0.25 x5
+  B/seed1: naive pick arith_xgb0.7 m=1 b_o=2 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=2 b_m=0.25 x4; geo_mean m=1 b_o=2 b_m=0.25 x1
+  B/seed2: naive pick arith_xgb0.7 m=1 b_o=2 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=2 b_m=0.25 x4; arith_xgb0.7 m=1 b_o=2 b_m=0 x1
+  A/seed42: naive pick arith_xgb0.7 m=1 b_o=1 b_m=0; fold picks arith_xgb0.7 m=1 b_o=1 b_m=0 x3; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  A/seed1: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=1 b_m=0 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x2; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  A/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=1 b_m=0 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x2; geo_mean m=1 b_o=0.5 b_m=0.25 x1
+  D/seed42: naive pick arith_xgb0.7 m=1 b_o=2 b_m=0; fold picks arith_xgb0.7 m=1 b_o=2 b_m=0 x2; arith_xgb0.7 m=1 b_o=1.5 b_m=0.5 x1; geo_mean m=1 b_o=1.5 b_m=0.25 x2
+  D/seed1: naive pick arith_xgb0.7 m=1 b_o=2 b_m=0; fold picks arith_xgb0.7 m=1 b_o=2 b_m=0 x3; arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x1; geo_mean m=1 b_o=1.5 b_m=0.25 x1
+  D/seed2: naive pick arith_xgb0.7 m=1 b_o=1.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=1.5 b_m=0.25 x3; arith_xgb0.7 m=1 b_o=2 b_m=0 x2
+  Paired differences (block bootstrap, same resamples):
+    B/seed42 - A/seed42: accuracy -0.01 [-0.31,+0.26] P(>0)=0.46 | orchard_recall +13.98 [+10.70,+18.09] P(>0)=1.00 | orchard_f1 -1.78 [-2.58,-0.99] P(>0)=0.00 | macro_f1 +0.12 [-0.05,+0.31] P(>0)=0.91
+    B/seed1 - A/seed1: accuracy -0.03 [-0.33,+0.26] P(>0)=0.42 | orchard_recall +14.51 [+11.26,+18.38] P(>0)=1.00 | orchard_f1 -2.43 [-3.27,-1.59] P(>0)=0.00 | macro_f1 +0.09 [-0.10,+0.28] P(>0)=0.82
+    B/seed2 - A/seed2: accuracy -0.02 [-0.31,+0.25] P(>0)=0.44 | orchard_recall +14.94 [+11.78,+18.80] P(>0)=1.00 | orchard_f1 -2.22 [-3.04,-1.40] P(>0)=0.00 | macro_f1 +0.11 [-0.07,+0.30] P(>0)=0.88
+    B/seed42 - D/seed42: accuracy -0.06 [-0.20,+0.08] P(>0)=0.21 | orchard_recall +3.31 [+1.82,+5.20] P(>0)=1.00 | orchard_f1 +0.05 [-0.36,+0.46] P(>0)=0.59 | macro_f1 +0.02 [-0.07,+0.11] P(>0)=0.69
+    B/seed1 - D/seed1: accuracy -0.13 [-0.27,+0.01] P(>0)=0.04 | orchard_recall +4.80 [+3.00,+6.97] P(>0)=1.00 | orchard_f1 +0.12 [-0.29,+0.52] P(>0)=0.73 | macro_f1 -0.00 [-0.09,+0.08] P(>0)=0.46
+    B/seed2 - D/seed2: accuracy -0.15 [-0.28,-0.02] P(>0)=0.01 | orchard_recall +4.70 [+2.66,+7.06] P(>0)=1.00 | orchard_f1 +0.01 [-0.43,+0.45] P(>0)=0.50 | macro_f1 -0.03 [-0.12,+0.06] P(>0)=0.26
+
+=== Rule: closest_stretch ============================================================
+arm/seed               | naive (selected on frh04)   | cross-fitted, 95% block-bootstrap CI
+                       |    acc  orchR  orchP  |    acc CI               orchR CI               orchP orchF1  wheat macroF1
+B/seed42               |  83.07  62.54  15.51  |  83.13 [82.38,83.89]  61.37 [55.33,67.24]  16.05  25.45  98.65   61.43
+B/seed1                |  83.21  60.41  17.27  |  83.16 [82.44,83.90]  61.37 [55.35,67.52]  15.90  25.26  98.65   61.42
+B/seed2                |  83.02  63.39  14.80  |  83.13 [82.39,83.89]  61.26 [54.91,67.54]  15.91  25.26  98.67   61.40
+A/seed42               |  81.19  62.01   9.12  |  81.24 [80.36,82.14]  61.90 [55.82,67.19]   9.09  15.85  98.30   61.61
+A/seed1                |  81.08  62.54   9.14  |  81.14 [80.25,82.04]  62.33 [56.22,67.52]   9.15  15.95  98.30   59.56
+A/seed2                |  81.11  62.97   9.20  |  81.14 [80.26,82.02]  62.54 [56.80,67.48]   9.22  16.07  98.29   59.55
+D/seed42               |  82.53  62.65  11.41  |  82.68 [81.94,83.46]  60.41 [53.70,66.58]  12.10  20.16  98.61   60.70
+D/seed1                |  82.79  60.41  12.58  |  82.67 [81.95,83.43]  61.15 [54.68,67.28]  11.99  20.05  98.63   60.68
+D/seed2                |  82.52  62.65  11.21  |  82.65 [81.92,83.42]  60.83 [54.22,67.04]  11.73  19.67  98.63   60.65
+  B over 3 seeds (mean+/-sd): accuracy=83.14+/-0.02  orchard_recall=61.33+/-0.06  orchard_precision=15.96+/-0.08  macro_f1=61.41+/-0.02
+  A over 3 seeds (mean+/-sd): accuracy=81.18+/-0.06  orchard_recall=62.26+/-0.33  orchard_precision=9.15+/-0.07  macro_f1=60.24+/-1.19
+  D over 3 seeds (mean+/-sd): accuracy=82.67+/-0.02  orchard_recall=60.80+/-0.37  orchard_precision=11.94+/-0.19  macro_f1=60.68+/-0.03
+  B/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x3; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x2
+  B/seed1: naive pick geo_mean m=1 b_o=0 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x3
+  B/seed2: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x2; geo_mean m=1 b_o=0 b_m=0.25 x1
+  A/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3
+  A/seed1: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3
+  A/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0; fold picks geo_mean m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3
+  D/seed42: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0.25 x2; geo_mean m=1 b_o=0.5 b_m=0 x3
+  D/seed1: naive pick arith_xgb0.7 m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0.25 x2; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x3
+  D/seed2: naive pick geo_mean m=1 b_o=0.5 b_m=0.25; fold picks geo_mean m=1 b_o=0.5 b_m=0.25 x1; geo_mean m=1 b_o=0.5 b_m=0 x2; arith_xgb0.7 m=1 b_o=1 b_m=0 x1; arith_xgb0.7 m=1 b_o=0.5 b_m=0.25 x1
+  Paired differences (block bootstrap, same resamples):
+    B/seed42 - A/seed42: accuracy +1.89 [+1.65,+2.11] P(>0)=1.00 | orchard_recall -0.53 [-4.42,+4.06] P(>0)=0.42 | orchard_f1 +9.60 [+8.01,+11.22] P(>0)=1.00 | macro_f1 -0.18 [-4.43,+2.17] P(>0)=0.52
+    B/seed1 - A/seed1: accuracy +2.02 [+1.77,+2.26] P(>0)=1.00 | orchard_recall -0.96 [-5.49,+4.06] P(>0)=0.37 | orchard_f1 +9.31 [+7.64,+10.97] P(>0)=1.00 | macro_f1 +1.86 [+1.67,+2.30] P(>0)=1.00
+    B/seed2 - A/seed2: accuracy +1.98 [+1.75,+2.22] P(>0)=1.00 | orchard_recall -1.28 [-5.53,+3.33] P(>0)=0.32 | orchard_f1 +9.19 [+7.43,+10.89] P(>0)=1.00 | macro_f1 +1.85 [+1.65,+2.28] P(>0)=1.00
+    B/seed42 - D/seed42: accuracy +0.44 [+0.35,+0.55] P(>0)=1.00 | orchard_recall +0.96 [-0.83,+2.96] P(>0)=0.83 | orchard_f1 +5.29 [+4.37,+6.19] P(>0)=1.00 | macro_f1 +0.73 [+0.62,+0.93] P(>0)=1.00
+    B/seed1 - D/seed1: accuracy +0.49 [+0.40,+0.58] P(>0)=1.00 | orchard_recall +0.21 [-1.47,+2.11] P(>0)=0.58 | orchard_f1 +5.21 [+4.30,+6.17] P(>0)=1.00 | macro_f1 +0.73 [+0.63,+0.94] P(>0)=1.00
+    B/seed2 - D/seed2: accuracy +0.47 [+0.37,+0.58] P(>0)=1.00 | orchard_recall +0.43 [-1.63,+2.59] P(>0)=0.64 | orchard_f1 +5.60 [+4.53,+6.61] P(>0)=1.00 | macro_f1 +0.75 [+0.64,+0.95] P(>0)=1.00
+
+Per-class (cross-fitted, accuracy_first, B/seed42):
+  class        support   prec recall     F1
+  barley         13051  97.34  97.50  97.42
+  wheat          30380  98.57  98.65  98.61
+  rapeseed        5596  98.39  98.34  98.36
+  corn           44003  98.71  98.57  98.64
+  sunflower          1   0.00   0.00   0.00
+  orchards         937  22.36  51.44  31.17
+  nuts              10   0.00   0.00   0.00
+  perm_meadow    32641  57.24  73.25  64.27
+  temp_meadow    52013  79.65  63.85  70.88
+
+Per-class (cross-fitted, orchard_first, B/seed42):
+  class        support   prec recall     F1
+  barley         13051  97.30  97.49  97.39
+  wheat          30380  98.59  98.63  98.61
+  rapeseed        5596  98.30  98.34  98.32
+  corn           44003  98.67  98.54  98.61
+  sunflower          1   0.00   0.00   0.00
+  orchards         937   6.64  80.15  12.27
+  nuts              10   0.00   0.00   0.00
+  perm_meadow    32641  57.80  63.33  60.44
+  temp_meadow    52013  81.53  60.43  69.41
+
+Orchard average precision (threshold-free, from blended probabilities; no selection):
+  B/seed42               geo_mean m=1=40.05  arith_xgb0.7 m=1=39.58
+  B/seed1                geo_mean m=1=40.07  arith_xgb0.7 m=1=39.61
+  B/seed2                geo_mean m=1=39.78  arith_xgb0.7 m=1=39.46
+  A/seed42               geo_mean m=1=26.96  arith_xgb0.7 m=1=26.64
+  A/seed1                geo_mean m=1=26.57  arith_xgb0.7 m=1=26.41
+  A/seed2                geo_mean m=1=27.09  arith_xgb0.7 m=1=26.79
+  D/seed42               geo_mean m=1=36.37  arith_xgb0.7 m=1=35.90
+  D/seed1                geo_mean m=1=36.36  arith_xgb0.7 m=1=35.87
+  D/seed2                geo_mean m=1=36.55  arith_xgb0.7 m=1=35.90

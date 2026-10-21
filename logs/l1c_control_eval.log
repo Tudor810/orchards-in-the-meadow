@@ -1,0 +1,36 @@
+1. Networks alone (argmax of TTA logits), parcels present in L1C and L2A:
+   122,557 of 122,708 parcels, 549 orchards
+   seed 42: accuracy l2a=82.49 l1c=81.38 diff=+1.11 [+0.83,+1.44] P(>0)=1.00 | orchard_recall l2a=12.39 l1c=6.74 diff=+5.65 [+3.50,+7.90] P(>0)=1.00 | macro_f1 l2a=60.62 l1c=58.89 diff=+1.72 [+1.35,+2.33] P(>0)=1.00
+   seed  1: accuracy l2a=82.53 l1c=81.82 diff=+0.71 [+0.50,+0.90] P(>0)=1.00 | orchard_recall l2a=11.84 l1c=7.47 diff=+4.37 [+1.99,+6.81] P(>0)=1.00 | macro_f1 l2a=60.56 l1c=59.35 diff=+1.21 [+0.80,+1.78] P(>0)=1.00
+   seed  2: accuracy l2a=82.42 l1c=81.76 diff=+0.66 [+0.38,+0.90] P(>0)=1.00 | orchard_recall l2a=15.12 l1c=6.01 diff=+9.11 [+6.85,+11.34] P(>0)=1.00 | macro_f1 l2a=60.99 l1c=59.11 diff=+1.88 [+1.57,+2.40] P(>0)=1.00
+   mean l2a-l1c accuracy        +0.83 (per seed +1.11, +0.71, +0.66)
+   mean l2a-l1c orchard_recall  +6.38 (per seed +5.65, +4.37, +9.11)
+   mean l2a-l1c orchard_f1      +9.67 (per seed +8.84, +7.01, +13.15)
+   mean l2a-l1c wheat_recall    +0.39 (per seed +0.36, +0.50, +0.29)
+   mean l2a-l1c macro_f1        +1.61 (per seed +1.72, +1.21, +1.88)
+
+2. Orchard-first with accuracy >= 81 (cross-fitted):
+   pheno       seed 42: acc=81.04 orchR=63.95 orchP=8.80
+   pheno       seed  1: acc=81.03 orchR=64.67 orchP=9.02
+   pheno       seed  2: acc=81.05 orchR=62.50 orchP=8.83
+   phenomsall  seed 42: acc=81.13 orchR=73.91 orchP=8.52
+   phenomsall  seed  1: acc=81.08 orchR=73.55 orchP=8.29
+   phenomsall  seed  2: acc=81.01 orchR=75.54 orchP=8.30
+   phenomsl1c  seed 42: acc=81.01 orchR=64.49 orchP=8.70
+   phenomsl1c  seed  1: acc=81.03 orchR=63.95 orchP=8.54
+   phenomsl1c  seed  2: acc=81.03 orchR=65.04 orchP=8.93
+   pheno       mean orchard recall 63.71 +/- 1.11
+   phenomsall  mean orchard recall 74.34 +/- 1.06
+   phenomsl1c  mean orchard recall 64.49 +/- 0.54
+   phenomsall-phenomsl1c accuracy        +0.12 [-0.03,+0.27] P(>0)=0.94 | +0.05 [-0.14,+0.24] P(>0)=0.69 | -0.02 [-0.18,+0.13] P(>0)=0.39
+   phenomsall-phenomsl1c orchard_recall  +9.42 [+6.46,+12.41] P(>0)=1.00 | +9.60 [+6.55,+12.75] P(>0)=1.00 | +10.51 [+7.27,+13.49] P(>0)=1.00
+   phenomsl1c-pheno accuracy        -0.03 [-0.15,+0.09] P(>0)=0.32 | -0.00 [-0.14,+0.13] P(>0)=0.47 | -0.02 [-0.12,+0.09] P(>0)=0.34
+   phenomsl1c-pheno orchard_recall  +0.54 [-1.52,+2.59] P(>0)=0.66 | -0.72 [-2.66,+1.10] P(>0)=0.20 | +2.54 [+0.39,+4.90] P(>0)=0.99
+   phenomsall-pheno accuracy        +0.09 [-0.06,+0.24] P(>0)=0.88 | +0.05 [-0.09,+0.19] P(>0)=0.74 | -0.04 [-0.19,+0.11] P(>0)=0.30
+   phenomsall-pheno orchard_recall  +9.96 [+6.97,+12.78] P(>0)=1.00 | +8.88 [+6.16,+11.60] P(>0)=1.00 | +13.04 [+9.84,+16.07] P(>0)=1.00
+
+3. Orchard AP (geo_mean m=1):
+   seed 42: pheno=26.60  phenomsall=33.53  phenomsl1c=26.63  phenomsall-phenomsl1c=+6.90 [+4.97,+9.01] P(>0)=1.00  phenomsl1c-pheno=+0.03 [-0.57,+0.65] P(>0)=0.50
+   seed  1: pheno=26.41  phenomsall=32.92  phenomsl1c=26.62  phenomsall-phenomsl1c=+6.31 [+4.36,+8.58] P(>0)=1.00  phenomsl1c-pheno=+0.21 [-0.40,+0.86] P(>0)=0.74
+   seed  2: pheno=26.43  phenomsall=33.57  phenomsl1c=27.09  phenomsall-phenomsl1c=+6.48 [+4.56,+8.60] P(>0)=1.00  phenomsl1c-pheno=+0.66 [+0.10,+1.22] P(>0)=0.99
+EVAL DONE

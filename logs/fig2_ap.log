@@ -1,0 +1,5 @@
+# Output of: python paper/figure2.py   (orchard AP on frh04, seed 42, the 122,557 parcels with an L1C series; Fig. 2c and Table 1)
+Pretrained: AP 18.76
+Meta-classifier: AP 35.18
+Meta + verifier: AP 39.43
+ok

@@ -185,7 +185,9 @@ Decode settings (blend, orchard multiplier `m`, orchard / meadow biases) are cho
 sample: frh04 is cut into 10 km spatial blocks grouped into 5 folds, and each fold is scored
 with the settings a fixed rule picks on the other four (`scripts/meta/evaluate_meta_protocol.py`).
 Rows marked † are means over 3 training seeds (network and meta-classifier seed 42, 1, 2);
-brackets are 95% spatial block-bootstrap intervals (seed 42).
+brackets are 95% spatial block-bootstrap intervals (seed 42). The logs cited below are in
+[`logs/`](logs/README.md), whose index maps each one to the tables of the paper; the scripts write
+them to `artifacts/`.
 
 | Model | Global acc | Orchard recall | Orchard precision | Wheat recall |
 | --- | --- | --- | --- | --- |
@@ -211,14 +213,15 @@ recall with accuracy ≥ 80.69% (or ≥ 81%); closest to stretch = smallest shor
 target (≥ 81% and ≥ 60%) is met by the "accuracy ≥ 81%" row on every seed (81.09 / 75.5,
 81.02 / 74.6, 81.03 / 75.4): orchard recall clears 60% with its whole interval, while
 accuracy sits at the floor by construction (seed 42 interval 80.2–82.0). The DMOE cascade
-row uses `evaluate_dmoe_pipeline.py` defaults with 8-view inputs (decoding the cached outputs
-instead, as `compute_model_metrics.py --models cascade` does, gives 79.66% / 21.2%). Full logs:
-`artifacts/meta_protocol_cloud_3seeds.log`, `artifacts/max_orchard_at81_3seeds.log`; final
-design: `artifacts/meta_protocol_final.log`. ‡ Verifier decode: orchard where the verifier
+row uses `evaluate_dmoe_pipeline.py` defaults with 8-view inputs (`logs/run_cascade_eval.log`;
+decoding the cached outputs instead, as `compute_model_metrics.py --models cascade` does, gives
+79.66% / 21.2%, `logs/model_metrics_cascade_frh04.log`). Full logs:
+`logs/meta_protocol_cloud_3seeds.log`, `logs/max_orchard_at81_3seeds.log`; final
+design: `logs/meta_protocol_final.log`. ‡ Verifier decode: orchard where the verifier
 score passes a threshold chosen out of sample, else the meta argmax without orchards
-(`artifacts/orchard_verifier_final/verify_seed*.log`). Paired confusion matrices and micro /
+(`logs/orchard_verifier_final/verify_seed*.log`). Paired confusion matrices and micro /
 macro precision, recall and F1 for the baseline, the meta-classifier and the final system:
-`scripts/meta/compute_model_metrics.py` (`artifacts/model_metrics_frh04.log`).
+`scripts/meta/compute_model_metrics.py` (`logs/model_metrics_frh04.log`).
 
 What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 42 / 1 / 2):
 
@@ -230,16 +233,16 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   (below) the gain holds in frh01, frh02 and frh04 but not in frh03.
 - Expert blocks (L3 distances, cereal features): dropping them moves accuracy by at most 0.15
   points and orchard AP 34.5 → 34.0; accuracy-first orchard recall −2.4 / 0.0 / −3.4
-  (`artifacts/meta_protocol_noexperts.log`). Left out of the final design.
+  (`logs/meta_protocol_noexperts.log`). Left out of the final design.
 - Averaging three L2A network seeds (no-experts base): orchard AP 34.0 → 35.3, accuracy-first
-  82.61 → 82.67% and 47.9 → 48.7% orchard recall (`artifacts/meta_protocol_final.log`).
+  82.61 → 82.67% and 47.9 → 48.7% orchard recall (`logs/meta_protocol_final.log`).
 - The pretrained L1C networks are still needed: without them accuracy-first accuracy falls
-  82.61 → 81.94% and orchard AP 34.0 → 31.4 (`artifacts/meta_protocol_checks245.log`).
+  82.61 → 81.94% and orchard AP 34.0 → 31.4 (`logs/meta_protocol_checks245.log`).
 - Vegetation indices as extra L2A-network inputs (`train_series_classifier.py --indices`): no
   gain (network 82.0–82.2% vs 82.5%; meta accuracy 82.40 vs 82.61%, orchard AP 33.3 vs 34.0;
-  `artifacts/meta_protocol_indices.log`).
+  `logs/meta_protocol_indices.log`).
 - End-to-end alternatives, given the same decision dial (biases and out-of-sample selection;
-  `scripts/networks/network_as_arm.py`, `artifacts/meta_protocol_e2e.log`, `artifacts/e2e/paired_ap_ci.log`):
+  `scripts/networks/network_as_arm.py`, `logs/meta_protocol_e2e.log`, `logs/e2e/paired_ap_ci.log`):
   the L2A network alone reaches 82.24% / 37.0% orchard recall at accuracy-first (argmax: 17.2%);
   trained with a class-weighted loss (`train_series_classifier.py --class-weights orchard` ×10,
   or `sqrt_inv` capped at 10) 81.69% / 45.4% and 82.01% / 40.6%. Weighting shifts the operating
@@ -257,7 +260,7 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   stretch), and orchard average precision 26.5 → 34.5. Every accuracy interval at
   accuracy-first and closest-to-stretch, and every orchard-recall interval at orchard-first,
   excludes zero. Training on all dates instead gives nearly the same gain (below).
-- Against that L2A network on its own (same seed, `artifacts/meta_vs_l2a_network_3seeds.log`):
+- Against that L2A network on its own (same seed, `logs/meta_vs_l2a_network_3seeds.log`):
   the accuracy-first meta-classifier matches its accuracy (+0.01 / +0.25 / +0.23, intervals
   span zero) and adds +33.3 / +30.6 / +33.9 points of orchard recall; closest to stretch
   gives up 0.22–0.59 accuracy for +42 to +44.
@@ -278,7 +281,7 @@ What moved the numbers (paired block bootstrap, out-of-sample selection, seeds 4
   frh01–frh03-trained model at the orchard-first and stretch points; at the accuracy-first
   point it lands on a higher-precision trade-off (82.21% accuracy, 37.0% orchard recall,
   22.3% orchard precision; seed 42). Re-tested for the final design (L2A network block
-  included, 3 seeds; `artifacts/meta_protocol_leakage_final.log`): accuracy changes by
+  included, 3 seeds; `logs/meta_protocol_leakage_final.log`): accuracy changes by
   −0.08 to +0.12 points at all three operating points and orchard AP by −0.7 to −1.0
   (35.3 → 34.5; `scripts/meta/paired_ap_ci.py`), every interval spanning zero. At the default
   decoding the out-of-sample model is only more conservative on orchards (accuracy-first:
@@ -311,7 +314,7 @@ D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
    20 → 32%, 28 → 42%). In frh03: −1.1 / −0.8 / +0.7, every interval spans zero, and
    accuracy-first precision falls 52 → 47%. frh03 has the most orchards (0.73% of parcels)
    and the highest meta AP before the verifier, partly because AP rises with prevalence.
-   Post-hoc (`scripts/rotation/diagnose_rotation_verifier.py`, `artifacts/rotation/diagnosis.log`;
+   Post-hoc (`scripts/rotation/diagnose_rotation_verifier.py`, `logs/rotation/diagnosis.log`;
    the frozen design is unchanged): frh03 holds 40% of all orchards, so its fold trains on
    the fewest (1,837 vs 2,117–2,706) and gets the loosest candidate threshold (τ 0.0055 vs
    0.009–0.019; 18% of parcels become candidates instead of 8–10%). A 9% candidate share in
@@ -324,8 +327,8 @@ D = B without phenology; C = B + verifier. Means of meta seeds 42 / 1 / 2:
 
 The variant on frh04 sits below the full design (82.40% / 50.9%, AP 32.5 vs 82.67% / 48.7%,
 AP 35.3), as expected without the pretrained networks and with one L2A seed. Logs:
-`artifacts/rotation/<region>/protocol_{B,ablation}.log` and `verify*.json`; AP intervals for
-checks 1–2 (`scripts/meta/paired_ap_ci.py`): `artifacts/rotation/rotation_ap_ci.log`.
+`logs/rotation/<region>/protocol_{B,ablation}.log` and `verify*.json`; AP intervals for
+checks 1–2 (`scripts/meta/paired_ap_ci.py`): `logs/rotation/rotation_ap_ci.log`.
 
 ### Phenology features
 
@@ -382,7 +385,7 @@ meta-classifier gain comes from adding an L2A-trained network at all (all-dates 
 seeds on the same 10 bands at L1C (top-of-atmosphere; `build_series_store.py --level L1C`,
 all dates, logits aligned to the cache rows with `--align-cache`, NaN for the 151 eval
 parcels without an L1C series) gives the meta-classifier almost nothing over phenology alone
-(3 seeds, `artifacts/meta_protocol_l1c_control.log`, `artifacts/l1c_control_eval.log`):
+(3 seeds, `logs/meta_protocol_l1c_control.log`, `logs/l1c_control_eval.log`):
 
 | Extra block | Acc-first acc / orchard | Orchard-first orchard | Acc ≥ 81% orchard | Closest-stretch acc | Orchard AP |
 | --- | --- | --- | --- | --- | --- |
@@ -405,7 +408,8 @@ pretrained L1C models see their 13 channels permuted (consistently in training a
 
 ### Feature-layout ablation
 
-`scripts/meta/ablate_meta_layouts.py`: XGBoost only, `m = 1`, no decode bias, 3 seeds (mean ± sd);
+`scripts/meta/ablate_meta_layouts.py` (`logs/ablate_meta_layouts_msfix.log`): XGBoost only, `m = 1`,
+no decode bias, 3 seeds (mean ± sd);
 deltas are paired against the compact layout.
 
 | Layout | Features | Accuracy | Orchard recall | Orchard precision | Δ acc | Δ orchard |
@@ -562,6 +566,7 @@ On Windows, if not installed editable, set `$env:PYTHONPATH = "src"` before runn
 ├── scripts/               # entry points by stage: data, cascade, networks, meta, rotation
 ├── tests/
 ├── paper/                 # paper (.docx), its figures and the scripts that draw them
+├── logs/                 # the logs behind every number in the paper (index: logs/README.md)
 ├── FROZEN_DESIGN.md       # pre-registered final design, checks and results
 ├── CITATION.cff           # citation metadata (GitHub's "Cite this repository")
 └── artifacts/             # checkpoints, caches, logs (gitignored)

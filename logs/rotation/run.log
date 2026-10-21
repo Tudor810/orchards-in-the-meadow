@@ -1,0 +1,122 @@
+=== [09 14:25] start: fold frh04 (existing networks)
+meta test=frh04 arm=B seed=42 m=1: feats 41, XGB acc 82.51% (481s)
+meta test=frh04 arm=B seed=42 m=2: feats 41, XGB acc 82.44% (509s)
+meta test=frh04 arm=B seed=42 m=3: feats 41, XGB acc 82.28% (516s)
+meta test=frh04 arm=A seed=42 m=1: feats 32, XGB acc 81.53% (434s)
+meta test=frh04 arm=D seed=42 m=1: feats 26, XGB acc 82.29% (371s)
+oof test=frh04 seed=42 held=frh01
+oof test=frh04 seed=42 held=frh02
+oof test=frh04 seed=42 held=frh03
+verify test=frh04 seed=42: AP meta 31.99 -> verifier 36.00 [+2.33,+5.71]; acc-first P 28.6 -> 41.6 (125s)
+meta test=frh04 arm=B seed=1 m=1: feats 41, XGB acc 82.58% (502s)
+meta test=frh04 arm=B seed=1 m=2: feats 41, XGB acc 82.48% (524s)
+meta test=frh04 arm=B seed=1 m=3: feats 41, XGB acc 82.38% (578s)
+meta test=frh04 arm=A seed=1 m=1: feats 32, XGB acc 81.50% (503s)
+meta test=frh04 arm=D seed=1 m=1: feats 26, XGB acc 82.33% (418s)
+oof test=frh04 seed=1 held=frh01
+oof test=frh04 seed=1 held=frh02
+oof test=frh04 seed=1 held=frh03
+verify test=frh04 seed=1: AP meta 31.81 -> verifier 36.22 [+2.84,+6.29]; acc-first P 27.7 -> 40.4 (131s)
+meta test=frh04 arm=B seed=2 m=1: feats 41, XGB acc 82.55% (542s)
+meta test=frh04 arm=B seed=2 m=2: feats 41, XGB acc 82.43% (548s)
+meta test=frh04 arm=B seed=2 m=3: feats 41, XGB acc 82.36% (545s)
+meta test=frh04 arm=A seed=2 m=1: feats 32, XGB acc 81.52% (452s)
+meta test=frh04 arm=D seed=2 m=1: feats 26, XGB acc 82.36% (381s)
+oof test=frh04 seed=2 held=frh01
+oof test=frh04 seed=2 held=frh02
+oof test=frh04 seed=2 held=frh03
+verify test=frh04 seed=2: AP meta 31.81 -> verifier 36.26 [+2.83,+6.06]; acc-first P 28.9 -> 43.0 (131s)
+=== [09 16:52] fold frh04 evaluated
+=== [09 16:52] training networks for test=frh01
+=== [09 18:34] meta for test=frh01
+meta test=frh01 arm=B seed=42 m=1: feats 41, XGB acc 83.69% (491s)
+meta test=frh01 arm=B seed=42 m=2: feats 41, XGB acc 83.59% (491s)
+meta test=frh01 arm=B seed=42 m=3: feats 41, XGB acc 83.53% (490s)
+meta test=frh01 arm=A seed=42 m=1: feats 32, XGB acc 82.47% (429s)
+meta test=frh01 arm=D seed=42 m=1: feats 26, XGB acc 83.52% (334s)
+oof test=frh01 seed=42 held=frh02
+oof test=frh01 seed=42 held=frh03
+oof test=frh01 seed=42 held=frh04
+verify test=frh01 seed=42: AP meta 39.02 -> verifier 43.05 [+2.19,+5.86]; acc-first P 42.5 -> 51.7 (163s)
+meta test=frh01 arm=B seed=1 m=1: feats 41, XGB acc 83.73% (477s)
+meta test=frh01 arm=B seed=1 m=2: feats 41, XGB acc 83.61% (462s)
+meta test=frh01 arm=B seed=1 m=3: feats 41, XGB acc 83.56% (447s)
+meta test=frh01 arm=A seed=1 m=1: feats 32, XGB acc 82.38% (403s)
+meta test=frh01 arm=D seed=1 m=1: feats 26, XGB acc 83.61% (317s)
+oof test=frh01 seed=1 held=frh02
+oof test=frh01 seed=1 held=frh03
+oof test=frh01 seed=1 held=frh04
+verify test=frh01 seed=1: AP meta 38.99 -> verifier 41.97 [+0.96,+5.41]; acc-first P 45.3 -> 47.9 (169s)
+meta test=frh01 arm=B seed=2 m=1: feats 41, XGB acc 83.68% (473s)
+meta test=frh01 arm=B seed=2 m=2: feats 41, XGB acc 83.59% (493s)
+meta test=frh01 arm=B seed=2 m=3: feats 41, XGB acc 83.57% (498s)
+meta test=frh01 arm=A seed=2 m=1: feats 32, XGB acc 82.40% (425s)
+meta test=frh01 arm=D seed=2 m=1: feats 26, XGB acc 83.53% (338s)
+oof test=frh01 seed=2 held=frh02
+oof test=frh01 seed=2 held=frh03
+oof test=frh01 seed=2 held=frh04
+verify test=frh01 seed=2: AP meta 38.96 -> verifier 42.40 [+1.30,+5.62]; acc-first P 43.6 -> 51.6 (170s)
+=== [09 20:52] fold frh01 evaluated
+=== [09 20:52] training networks for test=frh02
+=== [09 22:35] meta for test=frh02
+meta test=frh02 arm=B seed=42 m=1: feats 41, XGB acc 82.71% (521s)
+meta test=frh02 arm=B seed=42 m=2: feats 41, XGB acc 82.66% (485s)
+meta test=frh02 arm=B seed=42 m=3: feats 41, XGB acc 82.54% (484s)
+meta test=frh02 arm=A seed=42 m=1: feats 32, XGB acc 82.28% (431s)
+meta test=frh02 arm=D seed=42 m=1: feats 26, XGB acc 82.52% (341s)
+oof test=frh02 seed=42 held=frh01
+oof test=frh02 seed=42 held=frh03
+oof test=frh02 seed=42 held=frh04
+verify test=frh02 seed=42: AP meta 29.25 -> verifier 33.48 [+0.65,+8.18]; acc-first P 20.0 -> 32.2 (132s)
+meta test=frh02 arm=B seed=1 m=1: feats 41, XGB acc 82.75% (481s)
+meta test=frh02 arm=B seed=1 m=2: feats 41, XGB acc 82.55% (487s)
+=== [15 10:51] resume (master code): fold frh02, networks already trained
+verify test=frh02 seed=42: AP meta 29.25 -> verifier 33.48 [+0.65,+8.18]; acc-first P 20.0 -> 32.2 (151s)
+meta test=frh02 arm=B seed=1 m=3: feats 41, XGB acc 82.56% (475s)
+meta test=frh02 arm=A seed=1 m=1: feats 32, XGB acc 82.19% (415s)
+meta test=frh02 arm=D seed=1 m=1: feats 26, XGB acc 82.41% (351s)
+oof test=frh02 seed=1 held=frh01
+oof test=frh02 seed=1 held=frh03
+oof test=frh02 seed=1 held=frh04
+verify test=frh02 seed=1: AP meta 29.61 -> verifier 34.37 [+1.39,+8.53]; acc-first P 21.9 -> 30.5 (132s)
+meta test=frh02 arm=B seed=2 m=1: feats 41, XGB acc 82.74% (441s)
+meta test=frh02 arm=B seed=2 m=2: feats 41, XGB acc 82.67% (442s)
+meta test=frh02 arm=B seed=2 m=3: feats 41, XGB acc 82.56% (442s)
+meta test=frh02 arm=A seed=2 m=1: feats 32, XGB acc 82.39% (397s)
+meta test=frh02 arm=D seed=2 m=1: feats 26, XGB acc 82.48% (334s)
+oof test=frh02 seed=2 held=frh01
+oof test=frh02 seed=2 held=frh03
+oof test=frh02 seed=2 held=frh04
+verify test=frh02 seed=2: AP meta 29.11 -> verifier 33.51 [+0.89,+8.33]; acc-first P 19.2 -> 31.8 (133s)
+=== [15 12:06] fold frh02 evaluated
+=== [15 12:06] training networks for test=frh03
+=== [15 13:29] meta for test=frh03
+meta test=frh03 arm=B seed=42 m=1: feats 41, XGB acc 80.29% (417s)
+meta test=frh03 arm=B seed=42 m=2: feats 41, XGB acc 80.16% (435s)
+meta test=frh03 arm=B seed=42 m=3: feats 41, XGB acc 80.05% (418s)
+meta test=frh03 arm=A seed=42 m=1: feats 32, XGB acc 79.69% (379s)
+meta test=frh03 arm=D seed=42 m=1: feats 26, XGB acc 80.08% (317s)
+oof test=frh03 seed=42 held=frh01
+oof test=frh03 seed=42 held=frh02
+oof test=frh03 seed=42 held=frh04
+verify test=frh03 seed=42: AP meta 43.01 -> verifier 41.87 [-3.44,+1.25]; acc-first P 51.4 -> 46.6 (152s)
+meta test=frh03 arm=B seed=1 m=1: feats 41, XGB acc 80.34% (418s)
+meta test=frh03 arm=B seed=1 m=2: feats 41, XGB acc 80.19% (427s)
+meta test=frh03 arm=B seed=1 m=3: feats 41, XGB acc 80.09% (519s)
+meta test=frh03 arm=A seed=1 m=1: feats 32, XGB acc 79.68% (424s)
+meta test=frh03 arm=D seed=1 m=1: feats 26, XGB acc 79.97% (350s)
+oof test=frh03 seed=1 held=frh01
+oof test=frh03 seed=1 held=frh02
+oof test=frh03 seed=1 held=frh04
+verify test=frh03 seed=1: AP meta 42.77 -> verifier 42.00 [-2.96,+1.36]; acc-first P 52.7 -> 46.7 (161s)
+meta test=frh03 arm=B seed=2 m=1: feats 41, XGB acc 80.38% (537s)
+meta test=frh03 arm=B seed=2 m=2: feats 41, XGB acc 80.20% (499s)
+meta test=frh03 arm=B seed=2 m=3: feats 41, XGB acc 80.16% (474s)
+meta test=frh03 arm=A seed=2 m=1: feats 32, XGB acc 79.61% (410s)
+meta test=frh03 arm=D seed=2 m=1: feats 26, XGB acc 79.95% (392s)
+oof test=frh03 seed=2 held=frh01
+oof test=frh03 seed=2 held=frh02
+oof test=frh03 seed=2 held=frh04
+verify test=frh03 seed=2: AP meta 42.63 -> verifier 43.28 [-1.53,+2.68]; acc-first P 52.3 -> 48.5 (180s)
+=== [15 15:44] fold frh03 evaluated
+=== [15 15:44] ROTATION DONE

@@ -1,0 +1,33 @@
+candidate threshold 0.0176: train 26,225 candidates (2251 orchards), frh04 7,861 (465 of 552 orchards, 5.9% precision; meadows 7,125)
+  trained meta         on (26225, 9) (3s)
+  trained +pheno       on (26225, 24) (2s)
+  trained +monthly     on (26225, 180) (12s)
+  trained +geometry    on (26225, 28) (2s)
+  trained +neighbours  on (26225, 28) (2s)
+  trained all          on (26225, 188) (13s)
+
+frh04 orchard ranking (seed 1; AP diff vs meta score, 1000 block resamples):
+arm                              AP  P@60%R  P@75%R  AP diff [95% CI]
+meta score (no verifier)      35.10   13.98    8.40  -
+verifier: meta                32.74   11.33    7.58  -2.36 [-3.73,-1.20]
+verifier: +pheno              32.99   12.18    7.22  -2.10 [-3.24,-1.07]
+verifier: +monthly            35.95   14.21    8.53  +0.85 [-0.33,+1.88]
+verifier: +geometry           34.49   12.90    7.95  -0.60 [-1.83,+0.51]
+verifier: +neighbours         34.77   13.46    7.99  -0.32 [-1.64,+1.05]
+verifier: all                 38.93   18.25    9.30  +3.83 [+2.32,+5.43]
+
+Cross-fitted operating points (orchard where score >= t, else the meta argmax without orchards):
+  meta score (no verifier)     acc>=81 max orchard  acc 81.00  orchard R 74.5 P 8.4 F1 15.0
+  meta score (no verifier)     accuracy-first       acc 82.83  orchard R 35.7 P 34.7 F1 35.2
+  verifier: meta               acc>=81 max orchard  acc 81.04  orchard R 73.2 P 8.4 F1 15.1
+  verifier: meta               accuracy-first       acc 82.81  orchard R 35.7 P 33.0 F1 34.3
+  verifier: +pheno             acc>=81 max orchard  acc 81.03  orchard R 71.4 P 8.2 F1 14.7
+  verifier: +pheno             accuracy-first       acc 82.78  orchard R 35.9 P 29.0 F1 32.1
+  verifier: +monthly           acc>=81 max orchard  acc 81.01  orchard R 74.1 P 8.4 F1 15.1
+  verifier: +monthly           accuracy-first       acc 82.86  orchard R 35.9 P 39.0 F1 37.4
+  verifier: +geometry          acc>=81 max orchard  acc 81.02  orchard R 72.5 P 8.3 F1 14.8
+  verifier: +geometry          accuracy-first       acc 82.81  orchard R 36.1 P 32.8 F1 34.3
+  verifier: +neighbours        acc>=81 max orchard  acc 81.01  orchard R 73.2 P 8.3 F1 14.9
+  verifier: +neighbours        accuracy-first       acc 82.86  orchard R 35.9 P 37.2 F1 36.5
+  verifier: all                acc>=81 max orchard  acc 81.01  orchard R 76.8 P 8.7 F1 15.6
+  verifier: all                accuracy-first       acc 82.90  orchard R 36.1 P 44.6 F1 39.9

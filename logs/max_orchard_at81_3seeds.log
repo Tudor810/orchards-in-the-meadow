@@ -1,0 +1,28 @@
+pheno         seed 42: acc=81.04 orchR=63.95 orchP=8.80 wheat=97.95 folds->[155, 14, 252, 252, 252]
+pheno         seed  1: acc=81.03 orchR=64.67 orchP=9.02 wheat=98.03 folds->[105, 198, 252, 252, 252]
+pheno         seed  2: acc=81.05 orchR=62.50 orchP=8.83 wheat=97.97 folds->[63, 14, 154, 63, 252]
+phenomsall    seed 42: acc=81.13 orchR=73.91 orchP=8.52 wheat=98.29 folds->[210, 211, 162, 210, 210]
+phenomsall    seed  1: acc=81.08 orchR=73.55 orchP=8.29 wheat=98.38 folds->[22, 168, 162, 113, 70]
+phenomsall    seed  2: acc=81.01 orchR=75.54 orchP=8.30 wheat=98.28 folds->[113, 22, 70, 210, 210]
+phenomsclear  seed 42: acc=81.09 orchR=75.54 orchP=8.57 wheat=98.27 folds->[22, 22, 113, 113, 113]
+phenomsclear  seed  1: acc=81.02 orchR=74.64 orchP=8.36 wheat=98.22 folds->[113, 260, 162, 113, 113]
+phenomsclear  seed  2: acc=81.03 orchR=75.36 orchP=8.49 wheat=98.20 folds->[113, 210, 112, 21, 162]
+
+mean over seeds:
+  pheno         accuracy           81.04 +/- 0.01  (81.04, 81.03, 81.05)
+  pheno         orchard_recall     63.71 +/- 1.11  (63.95, 64.67, 62.50)
+  pheno         orchard_precision   8.89 +/- 0.12  (8.80, 9.02, 8.83)
+  phenomsall    accuracy           81.07 +/- 0.06  (81.13, 81.08, 81.01)
+  phenomsall    orchard_recall     74.34 +/- 1.06  (73.91, 73.55, 75.54)
+  phenomsall    orchard_precision   8.37 +/- 0.13  (8.52, 8.29, 8.30)
+  phenomsclear  accuracy           81.05 +/- 0.03  (81.09, 81.02, 81.03)
+  phenomsclear  orchard_recall     75.18 +/- 0.48  (75.54, 74.64, 75.36)
+  phenomsclear  orchard_precision   8.48 +/- 0.11  (8.57, 8.36, 8.49)
+
+paired differences (per seed, block bootstrap 95% CI):
+  phenomsclear-phenomsall accuracy        -0.05 [-0.21,+0.13] | -0.06 [-0.23,+0.13] | +0.03 [-0.15,+0.21]
+  phenomsclear-phenomsall orchard_recall  +1.63 [-1.15,+4.67] | +1.09 [-1.72,+4.13] | -0.18 [-3.11,+2.84]
+  phenomsall-pheno accuracy        +0.09 [-0.06,+0.24] | +0.05 [-0.09,+0.19] | -0.04 [-0.19,+0.11]
+  phenomsall-pheno orchard_recall  +9.96 [+6.97,+12.78] | +8.88 [+6.16,+11.60] | +13.04 [+9.84,+16.07]
+  phenomsclear-pheno accuracy        +0.04 [-0.11,+0.20] | -0.01 [-0.16,+0.14] | -0.02 [-0.17,+0.15]
+  phenomsclear-pheno orchard_recall  +11.59 [+8.70,+14.44] | +9.96 [+7.40,+12.64] | +12.86 [+9.50,+15.92]

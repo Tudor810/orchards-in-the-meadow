@@ -10,4 +10,5 @@ python paper/figures.py paper   # Fig. 1 (pipeline) and Fig. 3 (rotation gains)
 python paper/figure2.py         # Fig. 2 (seasonal curves, precision-recall curves)
 ```
 
-Every number in the paper comes from the logs listed in the repository README.
+Every number in the paper comes from the logs in [`logs/`](../logs/README.md), which maps each log to
+the tables and figures it backs.

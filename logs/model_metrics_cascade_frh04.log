@@ -1,0 +1,36 @@
+frh04 metrics (2026-10-21 14:56): 122,708 of 122,708 parcels (552 orchards); 0 without an L1C match left out of every system (paired).
+Micro P = R = F1 = accuracy (single-label); macro = unweighted mean over the 9 classes.
+meta / final: accuracy-first settings chosen on the other 4 of 5 spatial folds.
+
+=== Four-tier DMOE cascade [cascade; seed 42] ====================
+Confusion matrix (rows = true, cols = predicted; seed 42):
+  true \ pred    barley   wheat  rapese    corn  sunflo  orchar    nuts  perm_m  temp_m
+  barley          5293     391      24      32       1      11       0      18     211
+  wheat            142   16559      11      48       3      18       1      43     184
+  rapeseed           9       8    3145      17       2       3       1       4      55
+  corn              18      59       6   30604       7      88       5      58     516
+  sunflower          0       0       0       0       0       0       0       0       2
+  orchards           2       5       2       2       1     117       7     184     232
+  nuts               0       0       0       1       0       1       0       3       6
+  perm_meadow       22     112      12      72       2     913      55   11657   13289
+  temp_meadow       85     211      36     354      17     932      58    6341   30380
+Per-class:
+  class         support  precision   recall       F1
+  barley           5981      95.01    88.50    91.64
+  wheat           17009      95.47    97.35    96.40
+  rapeseed         3244      97.19    96.95    97.07
+  corn            31361      98.31    97.59    97.95
+  sunflower           2       0.00     0.00     0.00
+  orchards          552       5.62    21.20     8.88
+  nuts               11       0.00     0.00     0.00
+  perm_meadow     26134      63.67    44.60    52.46
+  temp_meadow     38414      67.70    79.09    72.95
+  micro P/R/F1 79.66   macro P 58.11  R 58.36  F1 57.48
+
+=== Summary (mean+/-sd over seeds where seeded) ====================
+  system                                      micro P=R=F1       macro P       macro R      macro F1        orch P        orch R       orch F1
+  Four-tier DMOE cascade                             79.66         58.11         58.36         57.48          5.62         21.20          8.88
+
+=== Orchard errors (mean+/-sd over seeds) ====================
+  system                                       false orchards that are meadows (%)   missed orchards called meadows (%)
+  Four-tier DMOE cascade                                                     93.85                                95.63

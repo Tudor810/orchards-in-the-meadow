@@ -1,0 +1,1593 @@
+{
+  "created": "2026-10-19T20:40:38",
+  "eval_cache": "D:\\Proiecte\\AgricultureAi\\artifacts\\cached_logits_eval.pt",
+  "folds": {
+    "region": "frh04",
+    "block_m": 10000.0,
+    "n_folds": 5,
+    "seed": 0
+  },
+  "n_boot": 2000,
+  "arms": {
+    "final": [
+      "artifacts\\pruned_proba_cache_noexpens",
+      "artifacts\\pruned_proba_cache_noexpens_seed1",
+      "artifacts\\pruned_proba_cache_noexpens_seed2"
+    ],
+    "finaloof": [
+      "artifacts\\pruned_proba_cache_noexpensoof",
+      "artifacts\\pruned_proba_cache_noexpensoof_seed1",
+      "artifacts\\pruned_proba_cache_noexpensoof_seed2"
+    ]
+  },
+  "orchard_ap": {
+    "final/seed42": {
+      "geo_mean m=1": 35.27846968912422,
+      "arith_xgb0.7 m=1": 35.257668695412356,
+      "geo_mean m=2": 34.69094282089959,
+      "arith_xgb0.7 m=2": 34.52497507910803,
+      "geo_mean m=3": 34.71305568378735,
+      "arith_xgb0.7 m=3": 34.65641367412023
+    },
+    "final/seed1": {
+      "geo_mean m=1": 35.360862251133476,
+      "arith_xgb0.7 m=1": 35.34142635568937,
+      "geo_mean m=2": 34.93869868445177,
+      "arith_xgb0.7 m=2": 34.941888746929756,
+      "geo_mean m=3": 34.51076827991803,
+      "arith_xgb0.7 m=3": 34.15459078220309
+    },
+    "final/seed2": {
+      "geo_mean m=1": 35.28085147002394,
+      "arith_xgb0.7 m=1": 35.071219207821066,
+      "geo_mean m=2": 35.146116024978376,
+      "arith_xgb0.7 m=2": 35.073805310634256,
+      "geo_mean m=3": 35.028532434205765,
+      "arith_xgb0.7 m=3": 34.682671569125006
+    },
+    "finaloof/seed42": {
+      "geo_mean m=1": 34.59716739470099,
+      "arith_xgb0.7 m=1": 34.40401488298625,
+      "geo_mean m=2": 34.12706018021774,
+      "arith_xgb0.7 m=2": 34.025187772608994,
+      "geo_mean m=3": 34.06703822163515,
+      "arith_xgb0.7 m=3": 33.98116813905121
+    },
+    "finaloof/seed1": {
+      "geo_mean m=1": 34.49294043809643,
+      "arith_xgb0.7 m=1": 34.33611642955026,
+      "geo_mean m=2": 34.54047203973637,
+      "arith_xgb0.7 m=2": 34.42452230314499,
+      "geo_mean m=3": 34.123219469498736,
+      "arith_xgb0.7 m=3": 33.99335367156222
+    },
+    "finaloof/seed2": {
+      "geo_mean m=1": 34.308366059991556,
+      "arith_xgb0.7 m=1": 34.06862362003969,
+      "geo_mean m=2": 34.622116163714495,
+      "arith_xgb0.7 m=2": 34.32862233370691,
+      "geo_mean m=3": 34.39922930867627,
+      "arith_xgb0.7 m=3": 34.14363160505095
+    }
+  },
+  "rules": {
+    "accuracy_first": {
+      "final/seed42": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.65312775043192,
+          "orchard_recall": 48.55072463768116,
+          "orchard_precision": 21.371610845295056,
+          "orchard_f1": 29.67884828349944,
+          "wheat_recall": 98.24798636016226,
+          "macro_recall": 64.23431850805524,
+          "macro_f1": 62.07104014294793
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.65312775043192,
+          "orchard_recall": 48.55072463768116,
+          "orchard_precision": 21.371610845295056,
+          "orchard_f1": 29.67884828349944,
+          "wheat_recall": 98.24798636016226,
+          "macro_recall": 64.23431850805524,
+          "macro_f1": 62.07104014294793
+        },
+        "ci95": {
+          "accuracy": [
+            81.79837283225186,
+            83.4634171016046
+          ],
+          "orchard_recall": [
+            42.9846554335479,
+            54.12309137890533
+          ],
+          "orchard_precision": [
+            17.363189021589346,
+            25.91738762692262
+          ],
+          "orchard_f1": [
+            25.078843575287575,
+            34.479693499523194
+          ],
+          "wheat_recall": [
+            97.92076329270259,
+            98.54373427825182
+          ],
+          "macro_f1": [
+            61.570077062419585,
+            70.35499544251125
+          ]
+        }
+      },
+      "final/seed1": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.6824656909085,
+          "orchard_recall": 48.188405797101446,
+          "orchard_precision": 21.76759410801964,
+          "orchard_f1": 29.988726042841034,
+          "wheat_recall": 98.25386560056441,
+          "macro_recall": 64.19246599883404,
+          "macro_f1": 62.114563772140706
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.6824656909085,
+          "orchard_recall": 48.188405797101446,
+          "orchard_precision": 21.76759410801964,
+          "orchard_f1": 29.988726042841034,
+          "wheat_recall": 98.25386560056441,
+          "macro_recall": 64.19246599883404,
+          "macro_f1": 62.114563772140706
+        },
+        "ci95": {
+          "accuracy": [
+            81.86361274088539,
+            83.47803356766379
+          ],
+          "orchard_recall": [
+            42.74963400993519,
+            53.790833177882874
+          ],
+          "orchard_precision": [
+            17.817861848296634,
+            26.21735486555845
+          ],
+          "orchard_f1": [
+            25.400442857027958,
+            34.64054481982412
+          ],
+          "wheat_recall": [
+            97.92649582980185,
+            98.54023006431906
+          ],
+          "macro_f1": [
+            61.60409487082009,
+            70.39588383278313
+          ]
+        }
+      },
+      "final/seed2": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.68817029044561,
+          "orchard_recall": 49.275362318840585,
+          "orchard_precision": 22.02429149797571,
+          "orchard_f1": 30.442081701175155,
+          "wheat_recall": 98.27150332177082,
+          "macro_recall": 64.3222683365935,
+          "macro_f1": 62.16820434356691
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.68817029044561,
+          "orchard_recall": 49.275362318840585,
+          "orchard_precision": 22.02429149797571,
+          "orchard_f1": 30.442081701175155,
+          "wheat_recall": 98.27150332177082,
+          "macro_recall": 64.3222683365935,
+          "macro_f1": 62.16820434356691
+        },
+        "ci95": {
+          "accuracy": [
+            81.83263341885984,
+            83.5023481196787
+          ],
+          "orchard_recall": [
+            44.09083230958231,
+            54.45783499446289
+          ],
+          "orchard_precision": [
+            18.220780385324865,
+            26.38236332048427
+          ],
+          "orchard_f1": [
+            26.1440325475323,
+            34.91193573392365
+          ],
+          "wheat_recall": [
+            97.95168688815258,
+            98.55552022970996
+          ],
+          "macro_f1": [
+            61.67542946061186,
+            70.43297865305435
+          ]
+        }
+      },
+      "finaloof/seed42": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.75255077093588,
+          "orchard_recall": 35.688405797101446,
+          "orchard_precision": 31.774193548387096,
+          "orchard_f1": 33.617747440273035,
+          "wheat_recall": 98.17155623493444,
+          "macro_recall": 63.03817920007444,
+          "macro_f1": 62.6038042059414
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.74032662907064,
+          "orchard_recall": 37.68115942028986,
+          "orchard_precision": 31.278195488721806,
+          "orchard_f1": 34.18241577649959,
+          "wheat_recall": 98.17155623493444,
+          "macro_recall": 63.250415851912955,
+          "macro_f1": 62.65444139213101
+        },
+        "ci95": {
+          "accuracy": [
+            81.86138138113121,
+            83.57029795579412
+          ],
+          "orchard_recall": [
+            33.05157261432858,
+            42.14628925843555
+          ],
+          "orchard_precision": [
+            26.163144998644245,
+            36.69608264440261
+          ],
+          "orchard_f1": [
+            29.681221265462675,
+            38.65772014273376
+          ],
+          "wheat_recall": [
+            97.85270790413094,
+            98.46042221100278
+          ],
+          "macro_f1": [
+            62.116229663830865,
+            71.00693296658967
+          ]
+        }
+      },
+      "finaloof/seed1": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.68735534765459,
+          "orchard_recall": 37.68115942028986,
+          "orchard_precision": 32.34836702954899,
+          "orchard_f1": 34.811715481171554,
+          "wheat_recall": 98.18331471573872,
+          "macro_recall": 63.23404806115091,
+          "macro_f1": 62.70373744457023
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.66616683508818,
+          "orchard_recall": 37.68115942028986,
+          "orchard_precision": 30.45387994143485,
+          "orchard_f1": 33.68421052631579,
+          "wheat_recall": 98.18331471573872,
+          "macro_recall": 63.23121607797562,
+          "macro_f1": 62.56891700570245
+        },
+        "ci95": {
+          "accuracy": [
+            81.73767151413938,
+            83.50899414093813
+          ],
+          "orchard_recall": [
+            33.22814626985186,
+            42.23002096924511
+          ],
+          "orchard_precision": [
+            25.47712796757383,
+            35.358761837075726
+          ],
+          "orchard_f1": [
+            29.435750043723214,
+            37.79401850830423
+          ],
+          "wheat_recall": [
+            97.8481280284091,
+            98.48257887683724
+          ],
+          "macro_f1": [
+            62.05253857746278,
+            70.90878137612648
+          ]
+        }
+      },
+      "finaloof/seed2": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.71098868859406,
+          "orchard_recall": 36.41304347826087,
+          "orchard_precision": 32.950819672131146,
+          "orchard_f1": 34.595524956970735,
+          "wheat_recall": 98.1656769945323,
+          "macro_recall": 63.10919381308868,
+          "macro_f1": 62.69328557901468
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.66779672067021,
+          "orchard_recall": 37.13768115942029,
+          "orchard_precision": 30.460624071322435,
+          "orchard_f1": 33.469387755102034,
+          "wheat_recall": 98.15979775413017,
+          "macro_recall": 63.16443405375378,
+          "macro_f1": 62.552652591295
+        },
+        "ci95": {
+          "accuracy": [
+            81.76653575515559,
+            83.50425410467551
+          ],
+          "orchard_recall": [
+            32.73236766546418,
+            41.55885780885781
+          ],
+          "orchard_precision": [
+            25.31051108043862,
+            35.63473566650545
+          ],
+          "orchard_f1": [
+            29.092758682420335,
+            37.66242378311344
+          ],
+          "wheat_recall": [
+            97.83217700304026,
+            98.45685832637398
+          ],
+          "macro_f1": [
+            62.03482402590195,
+            70.89481809918662
+          ]
+        }
+      }
+    },
+    "orchard_first": {
+      "final/seed42": {
+        "naive_config": {
+          "blend": "geo_mean",
+          "m": 2.0,
+          "b_orchard": 1.5,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 80.78201910225903,
+          "orchard_recall": 77.71739130434783,
+          "orchard_precision": 7.83418553688824,
+          "orchard_f1": 14.233576642335768,
+          "wheat_recall": 98.17743547533658,
+          "macro_recall": 66.60225520674705,
+          "macro_f1": 59.977951730185296
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.74779150503635,
+          "orchard_recall": 78.62318840579711,
+          "orchard_precision": 7.781961628115475,
+          "orchard_f1": 14.162179800946323,
+          "wheat_recall": 98.18919395614087,
+          "macro_recall": 66.67312556519869,
+          "macro_f1": 59.95037020773004
+        },
+        "ci95": {
+          "accuracy": [
+            79.8418824182913,
+            81.6421407313422
+          ],
+          "orchard_recall": [
+            73.90492443260082,
+            83.3362676056338
+          ],
+          "orchard_precision": [
+            6.676245367765468,
+            8.977918829695401
+          ],
+          "orchard_f1": [
+            12.281685551961637,
+            16.11920101054006
+          ],
+          "wheat_recall": [
+            97.85391113256222,
+            98.48529574242707
+          ],
+          "macro_f1": [
+            59.61499169727682,
+            67.78091925944425
+          ]
+        }
+      },
+      "final/seed1": {
+        "naive_config": {
+          "blend": "geo_mean",
+          "m": 2.0,
+          "b_orchard": 1.5,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 80.84232486879421,
+          "orchard_recall": 76.81159420289855,
+          "orchard_precision": 7.755624657033108,
+          "orchard_f1": 14.088719056321649,
+          "wheat_recall": 98.15391851372802,
+          "macro_recall": 66.53530359210765,
+          "macro_f1": 59.98942866537212
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.77957427388597,
+          "orchard_recall": 77.35507246376811,
+          "orchard_precision": 7.66882183908046,
+          "orchard_f1": 13.954248366013072,
+          "wheat_recall": 98.195073196543,
+          "macro_recall": 66.56937776871244,
+          "macro_f1": 59.953581809029146
+        },
+        "ci95": {
+          "accuracy": [
+            79.87993460188953,
+            81.69092601922941
+          ],
+          "orchard_recall": [
+            72.62745961712145,
+            82.1306795591533
+          ],
+          "orchard_precision": [
+            6.585791169918087,
+            8.858641818059704
+          ],
+          "orchard_f1": [
+            12.123627954169503,
+            15.909062163216088
+          ],
+          "wheat_recall": [
+            97.86074895512282,
+            98.49266752513711
+          ],
+          "macro_f1": [
+            59.62174545730161,
+            67.78103967710588
+          ]
+        }
+      },
+      "final/seed2": {
+        "naive_config": {
+          "blend": "geo_mean",
+          "m": 1.0,
+          "b_orchard": 1.5,
+          "b_meadow": 0.25
+        },
+        "naive": {
+          "accuracy": 80.95071225999935,
+          "orchard_recall": 77.53623188405797,
+          "orchard_precision": 8.246628131021193,
+          "orchard_f1": 14.907697666318354,
+          "wheat_recall": 98.23034863895585,
+          "macro_recall": 66.67847507619466,
+          "macro_f1": 60.076182712880545
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 1.5,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.82358118460084,
+          "orchard_recall": 77.53623188405797,
+          "orchard_precision": 7.846012832263978,
+          "orchard_f1": 14.250041618112203,
+          "wheat_recall": 98.21859015815157,
+          "macro_recall": 66.6027973012574,
+          "macro_f1": 59.99165323775304
+        },
+        "ci95": {
+          "accuracy": [
+            79.928843739127,
+            81.72664293453144
+          ],
+          "orchard_recall": [
+            72.96329547030808,
+            82.36430427828869
+          ],
+          "orchard_precision": [
+            6.726289686956723,
+            9.076158757376598
+          ],
+          "orchard_f1": [
+            12.348163988503222,
+            16.292272599060595
+          ],
+          "wheat_recall": [
+            97.8964375862117,
+            98.50543975750699
+          ],
+          "macro_f1": [
+            59.66102417096511,
+            67.82192524783798
+          ]
+        }
+      },
+      "finaloof/seed42": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 2.5,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 80.6997098803664,
+          "orchard_recall": 76.63043478260869,
+          "orchard_precision": 7.528029898558462,
+          "orchard_f1": 13.709285367039378,
+          "wheat_recall": 98.15391851372802,
+          "macro_recall": 66.5509947124844,
+          "macro_f1": 60.00730950352205
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 2.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.76735013202074,
+          "orchard_recall": 75.54347826086956,
+          "orchard_precision": 7.847196085811064,
+          "orchard_f1": 14.217524718718034,
+          "wheat_recall": 98.14216003292374,
+          "macro_recall": 66.52228701432621,
+          "macro_f1": 60.0489812292483
+        },
+        "ci95": {
+          "accuracy": [
+            79.8192080503857,
+            81.65935933703918
+          ],
+          "orchard_recall": [
+            71.25718343532714,
+            79.85745993987469
+          ],
+          "orchard_precision": [
+            6.714979760265631,
+            9.0518258313247
+          ],
+          "orchard_f1": [
+            12.3399173773578,
+            16.172125629771866
+          ],
+          "wheat_recall": [
+            97.81140142521696,
+            98.4423723315353
+          ],
+          "macro_f1": [
+            59.696803429112464,
+            67.88859097244159
+          ]
+        }
+      },
+      "finaloof/seed1": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 2.0,
+          "b_orchard": 2.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 81.034651367474,
+          "orchard_recall": 75.18115942028986,
+          "orchard_precision": 8.884607150503104,
+          "orchard_f1": 15.891250239326057,
+          "wheat_recall": 98.15979775413017,
+          "macro_recall": 66.55338506092133,
+          "macro_f1": 60.29040067364172
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.8977409785833,
+          "orchard_recall": 75.36231884057972,
+          "orchard_precision": 8.255606271085533,
+          "orchard_f1": 14.881058844571635,
+          "wheat_recall": 98.17743547533658,
+          "macro_recall": 66.53056547708083,
+          "macro_f1": 60.15274807893343
+        },
+        "ci95": {
+          "accuracy": [
+            79.94251116994144,
+            81.79180128567246
+          ],
+          "orchard_recall": [
+            70.84040083917333,
+            79.88836845430929
+          ],
+          "orchard_precision": [
+            7.065729228025505,
+            9.518535324484487
+          ],
+          "orchard_f1": [
+            12.917607432494496,
+            16.944895405573
+          ],
+          "wheat_recall": [
+            97.85780733102139,
+            98.46036958424591
+          ],
+          "macro_f1": [
+            59.80862325386868,
+            68.02652768248159
+          ]
+        }
+      },
+      "finaloof/seed2": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 3.0,
+          "b_orchard": 2.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 80.86514326694267,
+          "orchard_recall": 75.90579710144928,
+          "orchard_precision": 8.088803088803088,
+          "orchard_f1": 14.619678995115143,
+          "wheat_recall": 98.1362807925216,
+          "macro_recall": 66.54019275786169,
+          "macro_f1": 60.11877184554001
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 2.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 80.82358118460084,
+          "orchard_recall": 76.26811594202898,
+          "orchard_precision": 7.898686679174484,
+          "orchard_f1": 14.314858891533492,
+          "wheat_recall": 98.18919395614087,
+          "macro_recall": 66.57525617257365,
+          "macro_f1": 60.07952345899446
+        },
+        "ci95": {
+          "accuracy": [
+            79.85550300230634,
+            81.73687346909566
+          ],
+          "orchard_recall": [
+            72.08405722549524,
+            80.2581067635612
+          ],
+          "orchard_precision": [
+            6.777081540298177,
+            9.112550189944326
+          ],
+          "orchard_f1": [
+            12.440309949572388,
+            16.294117049431822
+          ],
+          "wheat_recall": [
+            97.88087316466687,
+            98.47551638081703
+          ],
+          "macro_f1": [
+            59.731808235648685,
+            67.92323236309893
+          ]
+        }
+      }
+    },
+    "closest_stretch": {
+      "final/seed42": {
+        "naive_config": {
+          "blend": "geo_mean",
+          "m": 3.0,
+          "b_orchard": 0.0,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.17068161815041,
+          "orchard_recall": 60.14492753623188,
+          "orchard_precision": 13.690721649484535,
+          "orchard_f1": 22.30433322136379,
+          "wheat_recall": 98.17743547533658,
+          "macro_recall": 65.28618968568185,
+          "macro_f1": 61.12202996250171
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.20164944420901,
+          "orchard_recall": 59.2391304347826,
+          "orchard_precision": 13.506815365551425,
+          "orchard_f1": 21.99798183652876,
+          "wheat_recall": 98.17743547533658,
+          "macro_recall": 65.20729907029707,
+          "macro_f1": 61.111728361261164
+        },
+        "ci95": {
+          "accuracy": [
+            81.33471406345524,
+            83.04388787072875
+          ],
+          "orchard_recall": [
+            54.14405208563232,
+            64.10760220280912
+          ],
+          "orchard_precision": [
+            11.241882912409228,
+            16.010233175248416
+          ],
+          "orchard_f1": [
+            18.719886947602703,
+            25.319896715202038
+          ],
+          "wheat_recall": [
+            97.83210286496758,
+            98.48738205212751
+          ],
+          "macro_f1": [
+            60.69200953509913,
+            69.16032154598437
+          ]
+        }
+      },
+      "final/seed1": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 2.0,
+          "b_orchard": 0.5,
+          "b_meadow": 0.0
+        },
+        "naive": {
+          "accuracy": 82.2163184144473,
+          "orchard_recall": 61.59420289855072,
+          "orchard_precision": 13.687600644122384,
+          "orchard_f1": 22.397891963109352,
+          "wheat_recall": 98.24798636016226,
+          "macro_recall": 65.45926659630398,
+          "macro_f1": 61.198242982375895
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.17394138931446,
+          "orchard_recall": 60.68840579710145,
+          "orchard_precision": 13.584752635847527,
+          "orchard_f1": 22.200132538104704,
+          "wheat_recall": 98.25386560056441,
+          "macro_recall": 65.34109243190308,
+          "macro_f1": 61.14885449534479
+        },
+        "ci95": {
+          "accuracy": [
+            81.32724511733102,
+            83.02496153335662
+          ],
+          "orchard_recall": [
+            55.62101313320825,
+            65.45114290699703
+          ],
+          "orchard_precision": [
+            11.381161792269472,
+            15.976759878228664
+          ],
+          "orchard_f1": [
+            19.024457830263692,
+            25.45885529705659
+          ],
+          "wheat_recall": [
+            97.93277780464524,
+            98.5387525800688
+          ],
+          "macro_f1": [
+            60.74242072391375,
+            69.19857449358894
+          ]
+        }
+      },
+      "final/seed2": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 0.5,
+          "b_meadow": 0.25
+        },
+        "naive": {
+          "accuracy": 82.21142875770121,
+          "orchard_recall": 60.507246376811594,
+          "orchard_precision": 13.858921161825727,
+          "orchard_f1": 22.55232950708981,
+          "wheat_recall": 98.31853724498795,
+          "macro_recall": 65.35562557151489,
+          "macro_f1": 61.191556604599064
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 2.0,
+            "b_orchard": 0.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.16253219024024,
+          "orchard_recall": 61.23188405797102,
+          "orchard_precision": 13.739837398373982,
+          "orchard_f1": 22.44355909694555,
+          "wheat_recall": 98.28326180257511,
+          "macro_recall": 65.41051622955997,
+          "macro_f1": 61.14939814538444
+        },
+        "ci95": {
+          "accuracy": [
+            81.29444623378237,
+            83.01696431680209
+          ],
+          "orchard_recall": [
+            55.969933983926516,
+            66.3946803828804
+          ],
+          "orchard_precision": [
+            11.495881649348325,
+            16.242939374466005
+          ],
+          "orchard_f1": [
+            19.243984617019986,
+            25.748717431683605
+          ],
+          "wheat_recall": [
+            97.96908706400299,
+            98.55908667363997
+          ],
+          "macro_f1": [
+            60.73250804014361,
+            69.19815500217736
+          ]
+        }
+      },
+      "finaloof/seed42": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 1.0,
+          "b_meadow": 0.25
+        },
+        "naive": {
+          "accuracy": 82.19920461583597,
+          "orchard_recall": 61.23188405797102,
+          "orchard_precision": 15.83880037488285,
+          "orchard_f1": 25.16753536857781,
+          "wheat_recall": 98.22446939855371,
+          "macro_recall": 65.58412497262353,
+          "macro_f1": 61.54353468322044
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.26032532516217,
+          "orchard_recall": 59.2391304347826,
+          "orchard_precision": 16.284860557768923,
+          "orchard_f1": 25.546875000000004,
+          "wheat_recall": 98.20095243694514,
+          "macro_recall": 65.42294950250421,
+          "macro_f1": 61.622142775060794
+        },
+        "ci95": {
+          "accuracy": [
+            81.35293795512817,
+            83.1205134001236
+          ],
+          "orchard_recall": [
+            54.20815400848501,
+            63.992796017122004
+          ],
+          "orchard_precision": [
+            13.752946895366799,
+            18.932330530018017
+          ],
+          "orchard_f1": [
+            22.229941020464707,
+            28.88463747338061
+          ],
+          "wheat_recall": [
+            97.89280220996912,
+            98.48392441274456
+          ],
+          "macro_f1": [
+            61.216076254245934,
+            69.75665082775582
+          ]
+        }
+      },
+      "finaloof/seed1": {
+        "naive_config": {
+          "blend": "geo_mean",
+          "m": 3.0,
+          "b_orchard": 0.5,
+          "b_meadow": 0.25
+        },
+        "naive": {
+          "accuracy": 82.1551977051211,
+          "orchard_recall": 61.59420289855072,
+          "orchard_precision": 16.0,
+          "orchard_f1": 25.40156892043332,
+          "wheat_recall": 98.23034863895585,
+          "macro_recall": 65.67369080793378,
+          "macro_f1": 61.53784381175333
+        },
+        "fold_configs": [
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.14623333441992,
+          "orchard_recall": 61.050724637681164,
+          "orchard_precision": 16.240963855421686,
+          "orchard_f1": 25.656642558051008,
+          "wheat_recall": 98.22446939855371,
+          "macro_recall": 65.5711007830868,
+          "macro_f1": 61.5553520211646
+        },
+        "ci95": {
+          "accuracy": [
+            81.2347591480567,
+            82.99611271778086
+          ],
+          "orchard_recall": [
+            56.548637244839774,
+            65.52966697936209
+          ],
+          "orchard_precision": [
+            13.84238139403276,
+            18.72128203732927
+          ],
+          "orchard_f1": [
+            22.46857989878854,
+            28.823678850539082
+          ],
+          "wheat_recall": [
+            97.92158739975545,
+            98.49873393290108
+          ],
+          "macro_f1": [
+            61.15741405904825,
+            69.66798106162399
+          ]
+        }
+      },
+      "finaloof/seed2": {
+        "naive_config": {
+          "blend": "arith_xgb0.7",
+          "m": 1.0,
+          "b_orchard": 1.0,
+          "b_meadow": 0.25
+        },
+        "naive": {
+          "accuracy": 82.15193793395703,
+          "orchard_recall": 60.507246376811594,
+          "orchard_precision": 15.629386991109032,
+          "orchard_f1": 24.84194867980662,
+          "wheat_recall": 98.24798636016226,
+          "macro_recall": 65.49109129258987,
+          "macro_f1": 61.48487633500025
+        },
+        "fold_configs": [
+          {
+            "blend": "arith_xgb0.7",
+            "m": 2.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 1.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.0
+          },
+          {
+            "blend": "geo_mean",
+            "m": 3.0,
+            "b_orchard": 0.5,
+            "b_meadow": 0.25
+          },
+          {
+            "blend": "arith_xgb0.7",
+            "m": 3.0,
+            "b_orchard": 1.0,
+            "b_meadow": 0.0
+          }
+        ],
+        "cross_fitted": {
+          "accuracy": 82.07777813997457,
+          "orchard_recall": 61.23188405797102,
+          "orchard_precision": 15.633672525439406,
+          "orchard_f1": 24.90788504053058,
+          "wheat_recall": 98.15979775413017,
+          "macro_recall": 65.53599921341936,
+          "macro_f1": 61.455598671951826
+        },
+        "ci95": {
+          "accuracy": [
+            81.14879811661642,
+            82.93042636161016
+          ],
+          "orchard_recall": [
+            56.44790949335957,
+            65.89304529282977
+          ],
+          "orchard_precision": [
+            13.345142748645012,
+            18.078519230266426
+          ],
+          "orchard_f1": [
+            21.85670916952772,
+            27.98007764289338
+          ],
+          "wheat_recall": [
+            97.83549509640727,
+            98.4393814728228
+          ],
+          "macro_f1": [
+            61.06298771555794,
+            69.5465686727352
+          ]
+        }
+      }
+    }
+  }
+}
