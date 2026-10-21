@@ -1,4 +1,6 @@
-# AgricultureAi
+# Orchards in the Meadow
+
+Code for the paper *Orchards in the Meadow: Seasonal Evidence and a Two-Stage Orchard Verifier for Rare-Class Crop Mapping from Sentinel-2 Time Series* (Bodea, 2026); see [How to cite](#how-to-cite).
 
 Rare-class (orchard) crop mapping on the BreizhCrops Sentinel-2 time-series dataset.
 The final system (design frozen on 2026-10-09, see `FROZEN_DESIGN.md`) is a **late-fusion
@@ -105,16 +107,7 @@ features as in Reproducing below (`patch_l2a_features.py`, `patch_l3_distances.p
 `patch_global_logits.py`). Caches: `artifacts/cached_logits_train.pt`,
 `artifacts/cached_logits_eval.pt`.
 
-### 3. Previous best meta-classifier (L1C era, Table 1 reference row)
-
-```bash
-python scripts/meta/train_meta_classifier.py --orchard-multiplier 25
-python scripts/meta/sweep_meta_m_area.py
-```
-
-The current meta-classifier, verifier and evaluation protocol are under Reproducing below.
-
-### 4. Evaluate DMOE cascade (without meta)
+### 3. Evaluate DMOE cascade (without meta)
 
 ```bash
 python scripts/cascade/evaluate_dmoe_pipeline.py \
@@ -178,7 +171,6 @@ scripts lives in `src/agricultureai`.
 | `compute_model_metrics.py` | Confusion matrices, micro / macro P, R, F1, orchard error shares |
 | `paired_ap_ci.py` | Paired block-bootstrap interval for the orchard-AP difference of two arms |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
-| `train_meta_classifier.py`, `sweep_meta_m_area.py` | Previous best (L1C-era XGBoost, `m = 25`) |
 
 **`scripts/rotation/`**: pre-registered region rotation
 
@@ -198,7 +190,6 @@ brackets are 95% spatial block-bootstrap intervals (seed 42).
 | Model | Global acc | Orchard recall | Orchard precision | Wheat recall |
 | --- | --- | --- | --- | --- |
 | MSResNet baseline (L1C, pretrained, stock transform) * | 80.77% | 15.73% | – | 97.58% |
-| Previous best: XGB @ m=25, 64-d (L1C, chosen on frh04) * | 80.76% | 35.80% | – | 97.57% |
 | DMOE cascade only (no meta-classifier) | 79.65% | 21.74% | 5.73% | 97.37% |
 | MSResNet trained on L2A, clear dates (argmax) † | 82.47% | 17.2% | 54.9% | 97.81% |
 | Meta + phenology, accuracy-first † | 82.01% | 45.5% | 15.3% | 98.07% |
@@ -560,17 +551,19 @@ On Windows, if not installed editable, set `$env:PYTHONPATH = "src"` before runn
 ├── src/agricultureai/
 │   ├── data/              # BreizhCrops loaders, label maps, episodic L3 sampling, cloud mask
 │   ├── models/            # Transformer, LTAE, GL-TAE, MSResNet, ProtoNet
-│   ├── training/          # trainer, checkpoints, losses
-│   ├── evaluation/        # selection protocol, spatial folds + decode grid, block bootstrap
+│   ├── training/          # trainers (generic + L2b/L2c experts), checkpoints, losses
+│   ├── evaluation/        # selection protocol, spatial folds + decode grid, block bootstrap, confusion metrics
 │   ├── pipeline.py        # DMOEPipeline + decoding of cached branch outputs
 │   ├── meta_features.py   # feature layouts (66-d full, 39-d compact), XGBoost / CatBoost, blends
 │   ├── meta_training.py   # meta-classifier feature loading and fitting
 │   ├── verifier.py        # orchard verifier: features, candidates, model, decoding
-│   └── cache_alignment.py # align outputs across BreizhCrops levels by parcel id
+│   ├── cache_alignment.py # align outputs across BreizhCrops levels by parcel id
+│   └── cache_io.py        # verified backups and atomic saves for patching the logit caches
 ├── scripts/               # entry points by stage: data, cascade, networks, meta, rotation
 ├── tests/
-├── paper/                 # paper (.docx), its build script and figure scripts
+├── paper/                 # paper (.docx), its figures and the scripts that draw them
 ├── FROZEN_DESIGN.md       # pre-registered final design, checks and results
+├── CITATION.cff           # citation metadata (GitHub's "Cite this repository")
 └── artifacts/             # checkpoints, caches, logs (gitignored)
 ```
 
@@ -587,3 +580,32 @@ GitHub Actions runs the same suite on push/PR (`.github/workflows/python-app.yml
 - Generated checkpoints, caches, Excel reports, and datasets are gitignored.
 - Checkpoints are self-describing (`architecture_config` + `training_metadata`).
 - W&B logging: `--wandb --wandb-project dmoe-thesis` on training scripts.
+
+## How to cite
+
+If you use this code, please cite the paper:
+
+```bibtex
+@unpublished{bodea2026orchards,
+  author = {Bodea, Tudor},
+  title  = {Orchards in the Meadow: Seasonal Evidence and a Two-Stage Orchard Verifier for Rare-Class Crop Mapping from Sentinel-2 Time Series},
+  year   = {2026},
+  note   = {Manuscript. Code: https://github.com/Tudor810/orchards-in-the-meadow}
+}
+```
+
+and the BreizhCrops dataset:
+
+```bibtex
+@article{russwurm2020breizhcrops,
+  author  = {Ru{\ss}wurm, Marc and Pelletier, Charlotte and Zollner, Maximilian and Lef{\`e}vre, S{\'e}bastien and K{\"o}rner, Marco},
+  title   = {{BreizhCrops}: A Time Series Dataset for Crop Type Mapping},
+  journal = {International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences},
+  volume  = {XLIII-B2-2020},
+  pages   = {1545--1551},
+  year    = {2020},
+  doi     = {10.5194/isprs-archives-XLIII-B2-2020-1545-2020}
+}
+```
+
+GitHub's "Cite this repository" button reads the same information from `CITATION.cff`.

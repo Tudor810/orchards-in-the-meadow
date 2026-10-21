@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "orchards-in-the-meadow"
+authors:
+  - family-names: Bodea
+    given-names: Tudor
+repository-code: "https://github.com/Tudor810/orchards-in-the-meadow"
+preferred-citation:
+  type: unpublished
+  title: "Orchards in the Meadow: Seasonal Evidence and a Two-Stage Orchard Verifier for Rare-Class Crop Mapping from Sentinel-2 Time Series"
+  authors:
+    - family-names: Bodea
+      given-names: Tudor
+  year: 2026
+  notes: "Manuscript."
