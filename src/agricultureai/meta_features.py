@@ -376,17 +376,6 @@ def make_blend(name: str, p_xgb: np.ndarray, p_cat: np.ndarray) -> np.ndarray:
     raise ValueError(f"Unknown blend {name!r}")
 
 
-def apply_class_log_bias(
-    probs: np.ndarray,
-    class_id: int,
-    bias: float,
-    *,
-    eps: float = 1e-12,
-) -> np.ndarray:
-    """Add ``bias`` in log-space to one class column; return renormalized probs."""
-    return apply_log_biases(probs, {int(class_id): float(bias)}, eps=eps)
-
-
 def apply_log_biases(
     probs: np.ndarray,
     biases: Dict[int, float],
@@ -431,58 +420,6 @@ def decode_probs(probs: np.ndarray) -> np.ndarray:
     return np.argmax(probs, axis=1).astype(np.int64)
 
 
-def orchard_precision(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    pred_mask = y_pred == GLOBAL_ORCHARDS
-    if not pred_mask.any():
-        return 0.0
-    return float((y_true[pred_mask] == GLOBAL_ORCHARDS).mean() * 100.0)
-
-
-def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
-    from sklearn.metrics import accuracy_score, recall_score
-
-    acc = accuracy_score(y_true, y_pred) * 100.0
-    orchard_mask = y_true == GLOBAL_ORCHARDS
-    orchard_recall = (
-        float((y_pred[orchard_mask] == GLOBAL_ORCHARDS).mean() * 100.0)
-        if orchard_mask.any()
-        else 0.0
-    )
-    wheat_mask = y_true == 1
-    wheat_recall = (
-        float((y_pred[wheat_mask] == 1).mean() * 100.0) if wheat_mask.any() else 0.0
-    )
-    macro_recall = (
-        recall_score(
-            y_true,
-            y_pred,
-            labels=list(range(NUM_GLOBAL_CLASSES)),
-            average="macro",
-            zero_division=0,
-        )
-        * 100.0
-    )
-    return {
-        "accuracy": acc,
-        "orchard_recall": orchard_recall,
-        "orchard_precision": orchard_precision(y_true, y_pred),
-        "wheat_recall": wheat_recall,
-        "macro_recall": macro_recall,
-        "acc_ok": acc > BASELINE_ACCURACY,
-        "orchard_ok": orchard_recall > BASELINE_ORCHARD_RECALL,
-    }
-
-
-def format_metrics(name: str, metrics: Dict[str, float]) -> str:
-    return (
-        f"{name:40s}  acc={metrics['accuracy']:6.2f}%  "
-        f"orchard={metrics['orchard_recall']:5.2f}%  "
-        f"wheat={metrics['wheat_recall']:5.2f}%  "
-        f"acc_ok={'Y' if metrics['acc_ok'] else 'N'}  "
-        f"orch_ok={'Y' if metrics['orchard_ok'] else 'N'}"
-    )
-
-
 def _has_xgboost() -> bool:
     return importlib.util.find_spec("xgboost") is not None
 
@@ -516,12 +453,13 @@ def build_xgb(
     )
 
 
-def fit_xgb(
+def fit_booster(
     clf: Any,
     x_train: np.ndarray,
     y_train: np.ndarray,
     sample_weight: np.ndarray,
 ) -> Any:
+    """Fit an XGBoost or CatBoost classifier (both take ``sample_weight`` and ``verbose``)."""
     clf.fit(x_train, y_train, sample_weight=sample_weight, verbose=False)
     return clf
 
@@ -530,7 +468,7 @@ def predict_xgb(clf: Any, x: np.ndarray) -> np.ndarray:
     return clf.predict(x)
 
 
-def predict_proba_xgb(clf: Any, x: np.ndarray) -> np.ndarray:
+def predict_proba(clf: Any, x: np.ndarray) -> np.ndarray:
     return clf.predict_proba(x).astype(np.float32)
 
 
@@ -559,17 +497,3 @@ def build_catboost(
         verbose=False,
         allow_writing_files=False,
     )
-
-
-def fit_catboost(
-    clf: Any,
-    x_train: np.ndarray,
-    y_train: np.ndarray,
-    sample_weight: np.ndarray,
-) -> Any:
-    clf.fit(x_train, y_train, sample_weight=sample_weight, verbose=False)
-    return clf
-
-
-def predict_proba_catboost(clf: Any, x: np.ndarray) -> np.ndarray:
-    return clf.predict_proba(x).astype(np.float32)

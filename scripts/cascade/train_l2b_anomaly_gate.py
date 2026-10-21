@@ -6,9 +6,7 @@ import argparse
 import os
 
 import torch
-import torch.nn as nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from tqdm import tqdm
 
 from agricultureai.data.breizhcrops_l2b_anomaly_gate import (
     L2B_ID_TO_NAME,
@@ -17,128 +15,9 @@ from agricultureai.data.breizhcrops_l2b_anomaly_gate import (
 )
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN as DEFAULT_MAX_SEQ_LEN
 from agricultureai.models.breizhcrops_gltae import BreizhCropsGLTAEExpert
-from agricultureai.training.checkpoints import build_checkpoint_payload, load_checkpoint, model_state_dict_from_checkpoint
+from agricultureai.training.checkpoints import load_checkpoint, model_state_dict_from_checkpoint
 from agricultureai.training.losses import FocalLoss
-
-
-class GLTAEBinaryTrainer:
-    def __init__(
-        self,
-        model,
-        train_loader,
-        test_loader,
-        criterion,
-        optimizer,
-        device,
-        *,
-        eval_set_name: str,
-        architecture_config: dict,
-        run_config: dict,
-    ) -> None:
-        self.model = model
-        self.train_loader = train_loader
-        self.test_loader = test_loader
-        self.criterion = criterion
-        self.optimizer = optimizer
-        self.device = device
-        self.eval_set_name = eval_set_name
-        self.architecture_config = architecture_config
-        self.run_config = run_config
-
-    def _payload(self, metadata: dict) -> dict:
-        return build_checkpoint_payload(
-            self.model,
-            architecture_config=self.architecture_config,
-            training_metadata={**self.run_config, **metadata, "eval_set": self.eval_set_name},
-        )
-
-    def train_epoch(self) -> tuple[float, float]:
-        self.model.train()
-        total_loss = 0.0
-        correct = 0
-        total = 0
-        for batch_idx, batch in enumerate(self.train_loader):
-            if batch_idx % 5 == 0:
-                print(f"  -> Processed batch {batch_idx}/{len(self.train_loader)}")
-            x, doy, padding_mask, targets, _ = batch
-            x = x.to(self.device, non_blocking=True)
-            doy = doy.to(self.device, non_blocking=True)
-            padding_mask = padding_mask.to(self.device, non_blocking=True)
-            targets = targets.to(self.device, non_blocking=True).long()
-            self.optimizer.zero_grad()
-            logits = self.model(x, doy, padding_mask)
-            loss = self.criterion(logits, targets)
-            loss.backward()
-            self.optimizer.step()
-            total_loss += float(loss.item())
-            correct += int(logits.argmax(dim=1).eq(targets).sum().item())
-            total += targets.size(0)
-        return total_loss / max(1, len(self.train_loader)), 100.0 * correct / max(total, 1)
-
-    def evaluate(self) -> float:
-        self.model.eval()
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for batch in self.test_loader:
-                x, doy, padding_mask, targets, _ = batch
-                x = x.to(self.device, non_blocking=True)
-                doy = doy.to(self.device, non_blocking=True)
-                padding_mask = padding_mask.to(self.device, non_blocking=True)
-                targets = targets.to(self.device, non_blocking=True).long()
-                logits = self.model(x, doy, padding_mask)
-                correct += int(logits.argmax(dim=1).eq(targets).sum().item())
-                total += targets.size(0)
-        return 100.0 * correct / max(total, 1)
-
-    def fit(
-        self,
-        epochs: int,
-        *,
-        checkpoint_dir: str | None,
-        lr_scheduler=None,
-        metrics_csv_path: str | None = None,
-    ) -> None:
-        best_val = -1.0
-        best_epoch = 0
-        if checkpoint_dir:
-            os.makedirs(checkpoint_dir, exist_ok=True)
-        for epoch in range(epochs):
-            train_loss, train_acc = self.train_epoch()
-            val_acc = self.evaluate()
-            lr = self.optimizer.param_groups[0]["lr"]
-            print(
-                f"Epoch [{epoch + 1}/{epochs}] loss={train_loss:.4f} "
-                f"train_acc={train_acc:.2f}% val_acc={val_acc:.2f}% lr={lr:.2e}"
-            )
-            if metrics_csv_path:
-                write_header = not os.path.isfile(metrics_csv_path)
-                with open(metrics_csv_path, "a", newline="") as f:
-                    import csv
-
-                    w = csv.writer(f)
-                    if write_header:
-                        w.writerow(["epoch", "train_loss", "train_acc", "val_acc", "eval_set", "lr"])
-                    w.writerow([epoch + 1, train_loss, train_acc, val_acc, self.eval_set_name, lr])
-            if checkpoint_dir:
-                meta = {
-                    "epoch": epoch + 1,
-                    "train_loss": train_loss,
-                    "train_accuracy": train_acc,
-                    "val_accuracy": val_acc,
-                    "learning_rate": lr,
-                }
-                torch.save(self._payload(meta), os.path.join(checkpoint_dir, "latest.pt"))
-                if val_acc > best_val:
-                    best_val = val_acc
-                    best_epoch = epoch + 1
-                    torch.save(
-                        self._payload({**meta, "best_epoch": best_epoch}),
-                        os.path.join(checkpoint_dir, "best.pt"),
-                    )
-                    print(f"  -> New best val acc {best_val:.2f}% (saved best.pt)")
-            if lr_scheduler is not None:
-                lr_scheduler.step()
+from agricultureai.training.series_trainer import SeriesExpertTrainer
 
 
 def main() -> None:
@@ -226,7 +105,7 @@ def main() -> None:
         "batch_size": int(args.batch_size),
         "class_names": L2B_ID_TO_NAME,
     }
-    trainer = GLTAEBinaryTrainer(
+    trainer = SeriesExpertTrainer(
         model,
         train_loader,
         val_loader,

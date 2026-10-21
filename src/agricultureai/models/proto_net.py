@@ -353,7 +353,6 @@ class PrototypicalNetwork(nn.Module):
 
         self.in_channels = int(in_channels)
         self.hidden_dim = int(hidden_dim)
-        self.encoder_name = encoder
 
         if device is not None:
             self.to(device)
@@ -406,23 +405,6 @@ class PrototypicalNetwork(nn.Module):
         return self.proto_episode(support_x, support_y, query_x, query_y, n_way)
 
     @torch.no_grad()
-    def prototypes_from_support(
-        self,
-        support_x: torch.Tensor,
-        support_y: torch.Tensor,
-        n_way: int,
-    ) -> torch.Tensor:
-        """Lock down prototype coordinates from a fixed reference support pool.
-
-        Used by the production inference path: the 5 prototypes are computed
-        once from clean ground-truth examples and then reused for the entire
-        incoming query stream.
-        """
-        self.eval()
-        support_emb = self.embed(support_x)  # (n_way*k_shot, D)
-        return compute_prototypes(support_emb, support_y, n_way)  # (n_way, D)
-
-    @torch.no_grad()
     def prototypes_and_inv_variances_from_support(
         self,
         support_x: torch.Tensor,
@@ -456,28 +438,6 @@ class PrototypicalNetwork(nn.Module):
             support_emb, support_y, n_way, shrinkage=shrinkage, eps=eps
         )
         return prototypes, 1.0 / variances
-
-    @torch.no_grad()
-    def classify_against_prototypes(
-        self,
-        query_x: torch.Tensor,
-        prototypes: torch.Tensor,
-    ) -> torch.Tensor:
-        """Predict relative class ids for a query batch given fixed prototypes.
-
-        Args:
-            query_x: ``(B, seq_len, channels)``.
-            prototypes: ``(n_way, embedding_dim)``.
-
-        Returns:
-            ``(B,)`` predicted relative class ids (nearest-prototype).
-        """
-        self.eval()
-        query_emb = self.embed(query_x)                              # (B, D)
-        distances = squared_euclidean_distance(query_emb, prototypes)  # (B, n_way)
-        # Nearest prototype == smallest distance == largest negative distance.
-        return distances.argmin(dim=1)                               # (B,)
-
 
 class Level3LinearExpert(nn.Module):
     """Frozen ProtoNet encoder + trainable linear head (Option #4).

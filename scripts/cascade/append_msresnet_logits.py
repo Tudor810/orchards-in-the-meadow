@@ -9,48 +9,15 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-from functools import partial
 from pathlib import Path
 
 import breizhcrops as bzh
 import torch
-from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from agricultureai.data.breizhcrops_series import (
-    BreizhCropsParcelDataset,
-    pad_collate_breizhcrops_series,
-)
+from agricultureai.data.breizhcrops_loaders import build_cache_eval_loader
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN
-
-
-def build_eval_loader(
-    *,
-    regions: list[str],
-    level: str,
-    max_samples: int,
-    batch_size: int,
-    max_seq_len: int,
-) -> DataLoader:
-    parts = []
-    for region in regions:
-        print(f"Loading region={region} level={level} (all classes) ...")
-        ds = bzh.BreizhCrops(region, level=level)
-        indices = list(range(len(ds)))
-        if max_samples > 0:
-            indices = indices[: min(max_samples, len(indices))]
-        parts.append(
-            BreizhCropsParcelDataset(
-                ds, indices, max_seq_len=max_seq_len, train=False, seed=0
-            )
-        )
-    return DataLoader(
-        ConcatDataset(parts),
-        batch_size=batch_size,
-        shuffle=False,
-        collate_fn=partial(pad_collate_breizhcrops_series, max_seq_len=max_seq_len),
-        pin_memory=torch.cuda.is_available(),
-    )
 
 
 @torch.inference_mode()
@@ -96,11 +63,11 @@ def append_msresnet_to_cache(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
-    print(f"Loading pretrained MSResNet ...")
+    print("Loading pretrained MSResNet ...")
     model = bzh.models.pretrained("MSResNet", device=device)
     model.eval()
 
-    loader = build_eval_loader(
+    loader = build_cache_eval_loader(
         regions=regions,
         level=level,
         max_samples=max_samples,

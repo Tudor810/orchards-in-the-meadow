@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -159,23 +158,6 @@ def test_l3_metrics_maps_global_labels_to_l3_locals():
     assert m["acc"] == pytest.approx(60.0)
     assert m["Orchards"] == 100.0 and m["Nut Trees"] == 100.0
     assert m["Temporary Meadows"] == 0.0 and m["Sunflowers"] == 0.0
-
-
-def test_backup_once_verifies_and_never_overwrites(tmp_path):
-    cache = tmp_path / "cached_logits_eval.pt"
-    cache.write_bytes(b"original")
-    backup = p3.backup_once(cache)
-    assert backup.name == "cached_logits_eval.pre_l3_patch.pt"
-    assert backup.read_bytes() == b"original"
-    cache.write_bytes(b"patched")
-    assert p3.backup_once(cache) == backup
-    assert backup.read_bytes() == b"original"
-
-
-def test_output_path_suffix():
-    cache = Path("artifacts/cached_logits_train.pt")
-    assert p3.output_path(cache, "_l3fix") == Path("artifacts/cached_logits_train_l3fix.pt")
-    assert p3.output_path(cache, "") == cache
 
 
 def _run_patch(tmp_path, monkeypatch, **overrides):

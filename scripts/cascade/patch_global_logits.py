@@ -24,9 +24,6 @@ Example::
 from __future__ import annotations
 
 import argparse
-import hashlib
-import os
-import shutil
 import zlib
 from datetime import datetime
 from pathlib import Path
@@ -39,6 +36,7 @@ import torch
 from tqdm import tqdm
 
 from agricultureai.cache_alignment import align_logits_by_parcel_id, parcel_ids_and_labels
+from agricultureai.cache_io import backup_once, output_path, save_atomic
 from agricultureai.data.breizhcrops_series import resample_series_views, split_raw_series
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN
 
@@ -128,27 +126,6 @@ def summarize(logits: torch.Tensor, labels: torch.Tensor, matched: torch.Tensor)
             f"wheat={recall(GLOBAL_WHEAT):6.2f}%  orchard={recall(GLOBAL_ORCHARDS):6.2f}%")
 
 
-def sha256_file(path: Path) -> str:
-    with path.open("rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
-
-
-def backup_once(cache_path: Path) -> Path:
-    backup = cache_path.with_name(cache_path.stem + BACKUP_SUFFIX)
-    if backup.exists():
-        print(f"Backup already exists, keeping it: {backup}")
-        return backup
-    shutil.copy2(cache_path, backup)
-    if sha256_file(backup) != sha256_file(cache_path):
-        raise RuntimeError(f"Backup verification failed for {backup}")
-    print(f"Backup (sha256 verified): {backup}")
-    return backup
-
-
-def output_path(cache_path: Path, suffix: str) -> Path:
-    return cache_path.with_name(f"{cache_path.stem}{suffix}{cache_path.suffix}") if suffix else cache_path
-
-
 def patch_cache(cache_path: Path, args, models_loader) -> None:
     payload = torch.load(cache_path, map_location="cpu", weights_only=True)
     meta = dict(payload["meta"])
@@ -182,13 +159,11 @@ def patch_cache(cache_path: Path, args, models_loader) -> None:
 
     target = output_path(cache_path, args.output_suffix)
     if target == cache_path:
-        meta["global_logits_backup"] = str(backup_once(cache_path))
+        meta["global_logits_backup"] = str(backup_once(cache_path, BACKUP_SUFFIX))
     else:
         meta["global_logits_patch_source"] = str(cache_path)
     payload["meta"] = meta
-    tmp = target.with_name(target.name + ".tmp")
-    torch.save(payload, tmp)
-    os.replace(tmp, target)
+    save_atomic(payload, target)
     print(f"Patched {', '.join(args.models)} -> {target}")
 
 

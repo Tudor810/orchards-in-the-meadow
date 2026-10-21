@@ -27,9 +27,6 @@ Example::
 from __future__ import annotations
 
 import argparse
-import hashlib
-import os
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +39,7 @@ import torch
 from tqdm import tqdm
 
 from agricultureai.cache_alignment import parcel_ids_and_labels
+from agricultureai.cache_io import backup_once, save_atomic
 from agricultureai.data.breizhcrops_series import resample_indices, split_raw_series
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN
 
@@ -148,26 +146,6 @@ def print_comparison(rows: Dict[str, dict], seq_len: int) -> None:
         )
 
 
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def backup_once(cache_path: Path) -> Path:
-    backup = cache_path.with_name(cache_path.stem + ".pre_l2a_patch.pt")
-    if backup.exists():
-        print(f"Backup already exists, keeping it: {backup}")
-        return backup
-    shutil.copy2(cache_path, backup)
-    if sha256_file(backup) != sha256_file(cache_path):
-        raise RuntimeError(f"Backup verification failed for {backup}")
-    print(f"Backup (sha256 verified): {backup}")
-    return backup
-
-
 def patch_cache(cache_path: Path, args: argparse.Namespace, model, device) -> None:
     payload = torch.load(cache_path, map_location="cpu", weights_only=True)
     meta = payload.get("meta")
@@ -231,11 +209,9 @@ def patch_cache(cache_path: Path, args: argparse.Namespace, model, device) -> No
 
     target = Path(args.output).resolve() if args.output else cache_path
     if target == cache_path:
-        meta["l2a_backup"] = str(backup_once(cache_path))
+        meta["l2a_backup"] = str(backup_once(cache_path, ".pre_l2a_patch.pt"))
     payload["meta"] = meta
-    tmp = target.with_name(target.name + ".tmp")
-    torch.save(payload, tmp)
-    os.replace(tmp, target)
+    save_atomic(payload, target)
     print(f"Patched l2a_logits ({args.method}) for {y.size:,} parcels -> {target}")
 
 

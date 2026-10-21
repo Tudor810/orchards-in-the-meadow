@@ -26,7 +26,7 @@ from agricultureai.meta_features import (
     COMPACT_BLOCK_NAMES,
     build_xgb,
     feature_column_indices,
-    fit_xgb,
+    fit_booster,
     full_feature_blocks,
     load_feature_matrix,
     orchard_sample_weights,
@@ -51,7 +51,7 @@ LAYOUTS.update(
 
 def fit_and_score(x_tr, y_tr, x_ev, y_ev, columns, *, m: float, seed: int) -> dict:
     clf = build_xgb(seed)
-    fit_xgb(clf, x_tr[:, columns], y_tr, orchard_sample_weights(y_tr, m))
+    fit_booster(clf, x_tr[:, columns], y_tr, orchard_sample_weights(y_tr, m))
     return classification_metrics(y_ev, predict_xgb(clf, x_ev[:, columns]).astype(np.int64))
 
 

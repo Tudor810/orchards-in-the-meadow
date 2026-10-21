@@ -56,20 +56,16 @@ import math
 import random
 import sys
 from datetime import datetime
-from functools import partial
 from pathlib import Path
 from typing import Dict, Iterable, List
 
 import torch
-from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import breizhcrops as bzh
 
-from agricultureai.data.breizhcrops_series import (
-    BreizhCropsParcelDataset,
-    pad_collate_breizhcrops_series,
-)
+from agricultureai.data.breizhcrops_loaders import build_cache_eval_loader
 from agricultureai.data.episodic_sampler import (
     NUM_LEVEL3_CLASSES,
     Level3FewShotDataset,
@@ -77,21 +73,12 @@ from agricultureai.data.episodic_sampler import (
 )
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN
 from agricultureai.models.proto_net import squared_mahalanobis_distance
-from agricultureai.data.breizhcrops_l2b_anomaly_gate import L2B_ANOMALY_LOCAL, L2B_GRASS_LOCAL
 from agricultureai.pipeline import (
-    decode_predictions,
-    CEREAL_LOCAL_TO_GLOBAL,
-    GLOBAL_CORN,
     GLOBAL_ORCHARDS,
-    GLOBAL_RAPESEED,
-    L3_LOCAL_TO_GLOBAL,
     MEADOW_GLOBAL_IDS,
     NUM_GLOBAL_CLASSES,
-    SUPER_CEREAL_GROUP,
-    SUPER_CORN,
-    SUPER_GRASSLAND_GROUP,
-    SUPER_RAPESEED,
     TREE_GLOBAL_IDS,
+    decode_predictions,
 )
 
 # Reuse the checkpoint loaders from the integration eval script (same dir).
@@ -113,35 +100,6 @@ PARAM_NAMES = ("t1", "t2b", "t2c", "t3", "tau_route", "b_meadow", "b_tree")
 # --------------------------------------------------------------------------- #
 # Phase 1: extraction                                                          #
 # --------------------------------------------------------------------------- #
-def build_eval_loader(
-    *,
-    regions: List[str],
-    level: str,
-    max_samples: int,
-    batch_size: int,
-    max_seq_len: int,
-) -> DataLoader:
-    parts = []
-    for region in regions:
-        print(f"Loading eval region={region} level={level} (all classes) ...")
-        ds = bzh.BreizhCrops(region, level=level)
-        indices = list(range(len(ds)))
-        if max_samples > 0:
-            indices = indices[:min(max_samples, len(indices))]
-        parts.append(
-            BreizhCropsParcelDataset(
-                ds, indices, max_seq_len=max_seq_len, train=False, seed=0
-            )
-        )
-    return DataLoader(
-        ConcatDataset(parts),
-        batch_size=batch_size,
-        shuffle=False,
-        collate_fn=partial(pad_collate_breizhcrops_series, max_seq_len=max_seq_len),
-        pin_memory=torch.cuda.is_available(),
-    )
-
-
 @torch.inference_mode()
 def extract_cached_logits(
     *,
@@ -237,7 +195,7 @@ def run_extraction(args, cache_path: Path) -> None:
     )
     print(f"Locked {prototypes.size(0)} prototypes of dim {prototypes.size(1)}.")
 
-    loader = build_eval_loader(
+    loader = build_cache_eval_loader(
         regions=args.regions,
         level=args.level,
         max_samples=int(args.max_samples),

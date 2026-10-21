@@ -16,13 +16,11 @@ from agricultureai.meta_features import (
     COMPACT_BLOCK_NAMES,
     build_catboost,
     build_xgb,
-    fit_catboost,
-    fit_xgb,
+    fit_booster,
     full_feature_blocks,
     load_feature_matrix,
     orchard_sample_weights,
-    predict_proba_catboost,
-    predict_proba_xgb,
+    predict_proba,
     select_feature_layout,
 )
 from agricultureai.pipeline import NUM_GLOBAL_CLASSES
@@ -70,10 +68,10 @@ def fit_predict(x_tr, y_tr, x_ev, *, m: float, seed: int):
     w = orchard_sample_weights(y_tr, m)
     x_tr, y_tr, w = ensure_all_classes(x_tr, y_tr, w, np.random.default_rng(seed))
     xgb = build_xgb(seed)
-    fit_xgb(xgb, x_tr, y_tr, w)
+    fit_booster(xgb, x_tr, y_tr, w)
     cat = build_catboost(seed)
-    fit_catboost(cat, x_tr, y_tr, w)
-    return predict_proba_xgb(xgb, x_ev), predict_proba_catboost(cat, x_ev), xgb
+    fit_booster(cat, x_tr, y_tr, w)
+    return predict_proba(xgb, x_ev), predict_proba(cat, x_ev), xgb
 
 
 def fit_xgb_scores(x_tr, y_tr, x_ev, *, seed: int) -> np.ndarray:
@@ -81,8 +79,8 @@ def fit_xgb_scores(x_tr, y_tr, x_ev, *, seed: int) -> np.ndarray:
     w = orchard_sample_weights(y_tr, 1.0)
     x_tr, y_tr, w = ensure_all_classes(x_tr, y_tr, w, np.random.default_rng(seed))
     model = build_xgb(seed)
-    fit_xgb(model, x_tr, y_tr, w)
-    return predict_proba_xgb(model, x_ev).astype(np.float32)
+    fit_booster(model, x_tr, y_tr, w)
+    return predict_proba(model, x_ev)
 
 
 def top_gain(model, names: List[str], k: int = 15) -> List[Tuple[str, float]]:

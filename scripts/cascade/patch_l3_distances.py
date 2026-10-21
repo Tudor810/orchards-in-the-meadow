@@ -35,9 +35,6 @@ Example::
 from __future__ import annotations
 
 import argparse
-import hashlib
-import os
-import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -51,6 +48,7 @@ import torch
 from tqdm import tqdm
 
 from agricultureai.cache_alignment import parcel_ids_and_labels
+from agricultureai.cache_io import backup_once, output_path, save_atomic
 from agricultureai.data.breizhcrops_series import resample_series_views, split_raw_series
 from agricultureai.data.episodic_sampler import (
     LEVEL3_ID_TO_NAME,
@@ -290,27 +288,6 @@ def format_metrics(name: str, metrics: Dict[str, float]) -> str:
     return f"  {name:24s} acc={metrics['acc']:.2f}  {recalls}"
 
 
-def output_path(cache_path: Path, suffix: str) -> Path:
-    return cache_path.with_name(f"{cache_path.stem}{suffix}{cache_path.suffix}") if suffix else cache_path
-
-
-def sha256_file(path: Path) -> str:
-    with path.open("rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
-
-
-def backup_once(cache_path: Path) -> Path:
-    backup = cache_path.with_name(cache_path.stem + BACKUP_SUFFIX)
-    if backup.exists():
-        print(f"Backup already exists, keeping it: {backup}")
-        return backup
-    shutil.copy2(cache_path, backup)
-    if sha256_file(backup) != sha256_file(cache_path):
-        raise RuntimeError(f"Backup verification failed for {backup}")
-    print(f"Backup (sha256 verified): {backup}")
-    return backup
-
-
 def patch_cache(
     cache_path: Path,
     args: argparse.Namespace,
@@ -369,13 +346,11 @@ def patch_cache(
 
     target = output_path(cache_path, args.output_suffix)
     if target == cache_path:
-        meta["l3_backup"] = str(backup_once(cache_path))
+        meta["l3_backup"] = str(backup_once(cache_path, BACKUP_SUFFIX))
     else:
         meta["l3_source"] = str(cache_path)
     payload["meta"] = meta
-    tmp = target.with_name(target.name + ".tmp")
-    torch.save(payload, tmp)
-    os.replace(tmp, target)
+    save_atomic(payload, target)
     print(f"Patched l3_distances ({args.sampling}, {args.mode}) for {labels.numel():,} parcels -> {target}")
 
 

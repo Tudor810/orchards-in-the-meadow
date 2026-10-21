@@ -61,7 +61,6 @@ LEVEL3_ID_TO_NAME: Dict[int, str] = {
 }
 
 NUM_LEVEL3_CLASSES = len(LEVEL3_ID_TO_NAME)
-LEVEL3_TARGET_IDS = list(LEVEL3_ID_TO_NAME.keys())
 
 # Classes that represent false-positive grassland leakage the rescuer should
 # push back (i.e. "reject") rather than promote to a true anomaly sub-class.
@@ -243,10 +242,6 @@ class EpisodicBatchSampler(Sampler[List[int]]):
                 f"{self.q_query}; rarest eligible class only has {smallest_eligible} "
                 f"samples (k_shot={self.k_shot})."
             )
-
-    @property
-    def episode_size(self) -> int:
-        return self.n_way * (self.k_shot + self.q_query)
 
     def __len__(self) -> int:
         return self.num_episodes

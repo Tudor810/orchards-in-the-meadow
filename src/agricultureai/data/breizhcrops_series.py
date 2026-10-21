@@ -9,13 +9,13 @@ splits reflectance from acquisition timestamps, and pads batches with aligned
 
 from __future__ import annotations
 
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, List, Optional, Sequence, Tuple
 
 import h5py
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Dataset
 
 import breizhcrops as bzh
 
@@ -38,7 +38,6 @@ _L2A_SPECTRAL_BANDS: List[str] = [
 ]
 
 _REFLECTANCE_SCALE = 1e-4
-_DOY_PAD_VALUE = 0  # reserved; padded positions are masked out in the model.
 
 
 def spectral_band_names(level: str) -> List[str]:
@@ -48,10 +47,6 @@ def spectral_band_names(level: str) -> List[str]:
     if level == "L2A":
         return list(_L2A_SPECTRAL_BANDS)
     raise ValueError(f"Unsupported BreizhCrops level {level!r}; use L1C or L2A.")
-
-
-def num_spectral_channels(level: str) -> int:
-    return len(spectral_band_names(level))
 
 
 def doa_values_to_doy(doa: np.ndarray) -> np.ndarray:
@@ -319,16 +314,6 @@ def pad_collate_with_views(
     """:func:`pad_collate_breizhcrops_series` plus stacked ``(B, V, T, C)`` views."""
     padded = pad_collate_breizhcrops_series([item[:4] for item in batch], max_seq_len=max_seq_len)
     return (*padded, torch.stack([item[4] for item in batch], dim=0))
-
-
-def resolve_base_breizhcrops(dataset: Union[Dataset, Subset]) -> bzh.BreizhCrops:
-    """Walk ``Subset`` wrappers to the underlying ``BreizhCrops`` instance."""
-    ds: Dataset = dataset
-    while isinstance(ds, Subset):
-        ds = ds.dataset
-    if not isinstance(ds, bzh.BreizhCrops):
-        raise TypeError(f"Expected BreizhCrops or Subset thereof; got {type(ds)}")
-    return ds
 
 
 def infer_padding_mask_from_features(

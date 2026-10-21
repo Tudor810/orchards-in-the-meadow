@@ -52,6 +52,3 @@ def model_state_dict_from_checkpoint(checkpoint: Mapping[str, Any]) -> Mapping[s
 def architecture_config_from_checkpoint(checkpoint: Mapping[str, Any]) -> dict[str, Any]:
     return dict(checkpoint.get(ARCHITECTURE_CONFIG_KEY) or {})
 
-
-def training_metadata_from_checkpoint(checkpoint: Mapping[str, Any]) -> dict[str, Any]:
-    return dict(checkpoint.get(TRAINING_METADATA_KEY) or {})

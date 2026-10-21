@@ -1,6 +1,7 @@
 from .breizhcrops_loaders import (
     build_breizhcrops_loaders,
     build_breizhcrops_region_eval_loader,
+    build_cache_eval_loader,
     filtered_indices,
 )
 from .episodic_sampler import (
@@ -8,7 +9,6 @@ from .episodic_sampler import (
     LEVEL3_ID_TO_NAME,
     LEVEL3_RAW_IDS,
     LEVEL3_REJECTION_CLASSES,
-    LEVEL3_TARGET_IDS,
     NUM_LEVEL3_CLASSES,
     EpisodicBatchSampler,
     Level3FewShotDataset,
@@ -18,8 +18,6 @@ from .episodic_sampler import (
     map_raw_to_level3,
 )
 from .breizhcrops_super_classes import (
-    ALL_RAW_CLASS_IDS,
-    NUM_SUPER_CLASSES,
     RAW_TO_SUPER_CLASS,
     SUPER_CLASS_ID_TO_NAME,
     map_raw_to_super_class,
@@ -27,20 +25,18 @@ from .breizhcrops_super_classes import (
 )
 
 __all__ = [
-    "ALL_RAW_CLASS_IDS",
     "EpisodicBatchSampler",
     "LEVEL3_ANOMALY_CLASSES",
     "LEVEL3_ID_TO_NAME",
     "LEVEL3_RAW_IDS",
     "LEVEL3_REJECTION_CLASSES",
-    "LEVEL3_TARGET_IDS",
     "Level3FewShotDataset",
     "NUM_LEVEL3_CLASSES",
-    "NUM_SUPER_CLASSES",
     "RAW_TO_SUPER_CLASS",
     "SUPER_CLASS_ID_TO_NAME",
     "build_breizhcrops_loaders",
     "build_breizhcrops_region_eval_loader",
+    "build_cache_eval_loader",
     "build_episodic_dataloader",
     "build_reference_support_pool",
     "episodic_collate_fn",

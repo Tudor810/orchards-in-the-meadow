@@ -23,9 +23,6 @@ SUPER_CLASS_ID_TO_NAME: Dict[int, str] = {
     3: "Grasslands",
 }
 
-NUM_SUPER_CLASSES = len(SUPER_CLASS_ID_TO_NAME)
-ALL_RAW_CLASS_IDS = sorted(RAW_TO_SUPER_CLASS.keys())
-
 
 def map_raw_to_super_class(label: int) -> int:
     """Map a raw BreizhCrops class id (0..8) to a super-class id (0..3)."""

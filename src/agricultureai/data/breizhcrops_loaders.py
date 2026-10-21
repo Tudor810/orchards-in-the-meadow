@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import List, Sequence, Tuple
 
+from functools import partial
+
 import torch
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, Subset
 
@@ -139,5 +141,31 @@ def build_breizhcrops_region_eval_loader(
         batch_size=batch_size,
         shuffle=False,
         collate_fn=collate,
+        pin_memory=torch.cuda.is_available(),
+    )
+
+
+def build_cache_eval_loader(
+    *,
+    regions: Sequence[str],
+    level: str,
+    max_samples: int,
+    batch_size: int,
+    max_seq_len: int = DEFAULT_MAX_SEQ_LEN,
+) -> DataLoader:
+    """Every parcel of each region (all classes) in dataset order: the row order of the logit caches."""
+    parts: List[Dataset] = []
+    for region in regions:
+        print(f"Loading region={region} level={level} (all classes) ...")
+        ds = bzh.BreizhCrops(region, level=level)
+        indices = list(range(len(ds)))
+        if max_samples > 0:
+            indices = indices[: min(max_samples, len(indices))]
+        parts.append(BreizhCropsParcelDataset(ds, indices, max_seq_len=max_seq_len, train=False, seed=0))
+    return DataLoader(
+        ConcatDataset(parts),
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=partial(pad_collate_breizhcrops_series, max_seq_len=max_seq_len),
         pin_memory=torch.cuda.is_available(),
     )

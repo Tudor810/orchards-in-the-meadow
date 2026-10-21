@@ -27,7 +27,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import torch
 from torch.utils.data import DataLoader
@@ -48,7 +48,8 @@ from agricultureai.data.episodic_sampler import (
     build_reference_support_pool,
     build_resampled_support_pool,
 )
-from agricultureai.evaluation.transformer import MAX_SEQ_LEN, pad_collate
+from agricultureai.evaluation.confusion_metrics import summarize_confusion, safe_div
+from agricultureai.evaluation.transformer import MAX_SEQ_LEN
 from agricultureai.models.breizhcrops_gltae import BreizhCropsGLTAEExpert
 from agricultureai.models.breizhcrops_ltae import BreizhCropsLTAEExpert
 from agricultureai.models.breizhcrops_msresnet import BreizhCropsMSResNetExpert
@@ -86,10 +87,6 @@ TRUE_ANOMALY_GLOBAL_IDS = (GLOBAL_SUNFLOWER, GLOBAL_ORCHARDS, GLOBAL_NUTS)  # 4,
 CEREAL_GLOBAL_IDS = (GLOBAL_BARLEY, GLOBAL_WHEAT)  # 0, 1
 
 
-def _safe_div(num: float, den: float) -> float:
-    return float(num) / float(den) if den else 0.0
-
-
 def _config_value(config: dict, key: str, fallback):
     value = config.get(key, fallback)
     return fallback if value is None else value
@@ -103,7 +100,6 @@ def load_l1_generalist(path: Path, device: torch.device, *, max_seq_len: int) ->
     cfg = architecture_config_from_checkpoint(checkpoint)
     model_type = str(_config_value(cfg, "model_type", "transformer")).lower()
     num_classes = int(_config_value(cfg, "num_classes", 4))
-    seq_len = int(_config_value(cfg, "seq_len", max_seq_len))
     print(f"L1 generalist: model_type={model_type} num_classes={num_classes}")
 
     if model_type != "transformer":
@@ -186,10 +182,6 @@ def load_l2c_meadow(path: Path, device: torch.device, *, channels: int) -> torch
     return model
 
 
-# Backward-compatible alias.
-load_l2b_grassland = load_l2b_anomaly_gate
-
-
 def load_l3_protonet(
     path: Path, device: torch.device, *, channels: int
 ) -> Tuple[PrototypicalNetwork, int]:
@@ -210,79 +202,14 @@ def load_l3_protonet(
 # --------------------------------------------------------------------------- #
 # Metrics                                                                     #
 # --------------------------------------------------------------------------- #
-def compute_metrics(confusion: torch.Tensor, num_classes: int = NUM_GLOBAL_CLASSES):
-    """Compute the same summary + per-class metrics as evaluate_pretrained_models.
-
-    Returns:
-        metrics: dict with overall/macro/weighted accuracy, precision, recall, f1.
-        per_class: dict with per-class support/accuracy/precision/recall/f1 lists.
-    """
-    support = confusion.sum(dim=1)
-    tp = confusion.diag()
-    fp = confusion.sum(dim=0) - tp
-    fn = confusion.sum(dim=1) - tp
-
-    accuracy_per_class = [
-        100.0 * _safe_div(int(tp[c].item()), int(support[c].item())) for c in range(num_classes)
-    ]
-    precision_per_class = [
-        100.0 * _safe_div(int(tp[c].item()), int((tp[c] + fp[c]).item())) for c in range(num_classes)
-    ]
-    recall_per_class = [
-        100.0 * _safe_div(int(tp[c].item()), int((tp[c] + fn[c]).item())) for c in range(num_classes)
-    ]
-    f1_per_class = []
-    for c in range(num_classes):
-        p = precision_per_class[c] / 100.0
-        r = recall_per_class[c] / 100.0
-        f1_per_class.append(100.0 * _safe_div(2 * p * r, p + r))
-
-    total = int(support.sum().item())
-    correct = int(tp.sum().item())
-    overall_acc = 100.0 * _safe_div(correct, total)
-
-    macro_precision = sum(precision_per_class) / num_classes
-    macro_recall = sum(recall_per_class) / num_classes
-    macro_f1 = sum(f1_per_class) / num_classes
-
-    weights = [int(s.item()) for s in support]
-    weighted_precision = _safe_div(
-        sum(precision_per_class[i] * weights[i] for i in range(num_classes)), sum(weights)
-    )
-    weighted_recall = _safe_div(
-        sum(recall_per_class[i] * weights[i] for i in range(num_classes)), sum(weights)
-    )
-    weighted_f1 = _safe_div(
-        sum(f1_per_class[i] * weights[i] for i in range(num_classes)), sum(weights)
-    )
-
-    metrics = {
-        "overall_accuracy": overall_acc,
-        "macro_precision": macro_precision,
-        "macro_recall": macro_recall,
-        "macro_f1": macro_f1,
-        "weighted_precision": weighted_precision,
-        "weighted_recall": weighted_recall,
-        "weighted_f1": weighted_f1,
-    }
-    per_class = {
-        "support": [int(s.item()) for s in support],
-        "accuracy": accuracy_per_class,
-        "precision": precision_per_class,
-        "recall": recall_per_class,
-        "f1": f1_per_class,
-    }
-    return metrics, per_class
-
-
 def report_global_metrics(confusion: torch.Tensor, l3_total: int):
     """Print the global confusion matrix and the headline integration metrics.
 
-    Returns the ``(metrics, per_class)`` pair from ``compute_metrics`` so callers
+    Returns the ``(metrics, per_class)`` pair from ``summarize_confusion`` so callers
     can forward it to the Excel writer.
     """
     n = confusion.size(0)
-    metrics, per_class = compute_metrics(confusion, num_classes=n)
+    metrics, per_class = summarize_confusion(confusion)
     support = confusion.sum(dim=1)
     tp = confusion.diag()
     precision = per_class["precision"]
@@ -310,12 +237,12 @@ def report_global_metrics(confusion: torch.Tensor, l3_total: int):
     cereal_rows = list(CEREAL_GLOBAL_IDS)
     cereal_support = int(confusion[cereal_rows, :].sum().item())
     cereal_correct = int(sum(int(confusion[c, c]) for c in cereal_rows))
-    cereal_acc = 100.0 * _safe_div(cereal_correct, cereal_support)
+    cereal_acc = 100.0 * safe_div(cereal_correct, cereal_support)
 
     # 2. True-anomaly recall (orchards/nuts/sunflowers), per-class + macro.
     anomaly_rows = list(TRUE_ANOMALY_GLOBAL_IDS)
     anomaly_recalls = {c: recall[c] for c in anomaly_rows}
-    macro_anomaly_recall = _safe_div(sum(anomaly_recalls.values()), len(anomaly_rows))
+    macro_anomaly_recall = safe_div(sum(anomaly_recalls.values()), len(anomaly_rows))
 
     print("\n----------------- Headline Integration Metrics ------------------")
     print(f"1. Global Macro F1-Score        : {macro_f1:.2f}%")

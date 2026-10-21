@@ -76,10 +76,6 @@ L3_LOCAL_TO_GLOBAL: Dict[int, int] = {
     4: GLOBAL_SUNFLOWER,
 }
 
-# Legacy aliases (3-tier grassland expert); kept for older scripts/tests.
-GRASSLAND_LOCAL_TO_GLOBAL = MEADOW_LOCAL_TO_GLOBAL
-GRASSLAND_ANOMALY_LOCAL_INDEX = L2B_ANOMALY_LOCAL
-
 
 def _lookup_table(mapping: Dict[int, int], size: int) -> torch.Tensor:
     lut = torch.zeros(size, dtype=torch.long)

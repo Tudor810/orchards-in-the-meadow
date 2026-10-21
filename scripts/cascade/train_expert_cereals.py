@@ -11,14 +11,11 @@ from agricultureai.data.breizhcrops_cereal_expert import (
     NUM_CEREAL_EXPERT_CLASSES,
     build_cereal_expert_loaders,
 )
+from agricultureai.evaluation.confusion_metrics import summarize_confusion
 from agricultureai.evaluation.transformer import MAX_SEQ_LEN as DEFAULT_MAX_SEQ_LEN
 from agricultureai.models.breizhcrops_ltae import BreizhCropsLTAEExpert
 from agricultureai.training.checkpoints import load_checkpoint, model_state_dict_from_checkpoint
 from agricultureai.training.trainer import ModelTrainer
-
-
-def _safe_div(num, den):
-    return float(num) / float(den) if den else 0.0
 
 
 def evaluate_cereal_expert(model, loader, device, id_to_class, num_classes=NUM_CEREAL_EXPERT_CLASSES):
@@ -34,36 +31,23 @@ def evaluate_cereal_expert(model, loader, device, id_to_class, num_classes=NUM_C
             for t, p in zip(targets.view(-1), preds.view(-1)):
                 confusion[int(t), int(p)] += 1
 
-    tp = confusion.diag()
-    fp = confusion.sum(dim=0) - tp
-    fn = confusion.sum(dim=1) - tp
-    support = confusion.sum(dim=1)
+    metrics, per_class = summarize_confusion(confusion)
+    support = per_class["support"]
+    macro_precision = metrics["macro_precision"]
 
-    precision_per_class = [
-        100.0 * _safe_div(int(tp[c].item()), int((tp[c] + fp[c]).item())) for c in range(num_classes)
-    ]
-    recall_per_class = [
-        100.0 * _safe_div(int(tp[c].item()), int((tp[c] + fn[c]).item())) for c in range(num_classes)
-    ]
-    macro_precision = sum(precision_per_class) / num_classes
-
-    total = int(support.sum().item())
-    correct = int(tp.sum().item())
-    overall_acc = 100.0 * _safe_div(correct, total)
-
-    print(f"\nOverall accuracy: {overall_acc:.2f}% ({correct}/{total})")
+    correct = int(confusion.diag().sum())
+    print(f"\nOverall accuracy: {metrics['overall_accuracy']:.2f}% ({correct}/{sum(support)})")
     print(f"Macro precision (Wheat vs Barley): {macro_precision:.2f}%\n")
 
     print("Per-class metrics:")
     for c in range(num_classes):
         name = id_to_class.get(c, str(c))
-        acc = 100.0 * _safe_div(int(tp[c].item()), int(support[c].item()))
         print(
             f"  - class {c} ({name:<12}): "
-            f"precision={precision_per_class[c]:6.2f}%  "
-            f"recall={recall_per_class[c]:6.2f}%  "
-            f"acc={acc:6.2f}%  "
-            f"support={int(support[c].item())}"
+            f"precision={per_class['precision'][c]:6.2f}%  "
+            f"recall={per_class['recall'][c]:6.2f}%  "
+            f"acc={per_class['accuracy'][c]:6.2f}%  "
+            f"support={support[c]}"
         )
 
     print("\nConfusion matrix (rows=true, cols=pred):")
