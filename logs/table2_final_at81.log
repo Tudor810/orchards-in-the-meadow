@@ -1,0 +1,35 @@
+Orchard-first with accuracy >= 81 (cross-fitted over 5 spatial folds):
+  final          pruned_proba_cache_noexpens                  acc=81.04 orchR=75.91 orchP=8.38  AP=35.28  folds->[71, 168, 162, 113, 162]
+  final          pruned_proba_cache_noexpens_seed1            acc=81.03 orchR=74.64 orchP=8.14  AP=35.36  folds->[260, 168, 162, 162, 260]
+  final          pruned_proba_cache_noexpens_seed2            acc=81.16 orchR=75.18 orchP=8.69  AP=35.28  folds->[22, 22, 162, 70, 162]
+  none           pruned_proba_cache_noexpnone                 acc=81.00 orchR=61.59 orchP=9.03  AP=25.76  folds->[197, 203, 196, 154, 154]
+  none           pruned_proba_cache_noexpnone_seed1           acc=81.01 orchR=60.69 orchP=9.52  AP=25.46  folds->[252, 197, 57, 154, 99]
+  none           pruned_proba_cache_noexpnone_seed2           acc=80.99 orchR=59.78 orchP=9.53  AP=25.80  folds->[8, 63, 7, 99, 99]
+  l1cnet         pruned_proba_cache_noexpl1cens               acc=81.04 orchR=61.23 orchP=9.07  AP=26.25  folds->[155, 14, 57, 8, 8]
+  l1cnet         pruned_proba_cache_noexpl1cens_seed1         acc=81.03 orchR=62.14 orchP=9.00  AP=26.33  folds->[63, 14, 252, 252, 252]
+  l1cnet         pruned_proba_cache_noexpl1cens_seed2         acc=81.05 orchR=60.87 orchP=9.35  AP=26.31  folds->[105, 14, 57, 57, 252]
+  l2aall         pruned_proba_cache_noexpallens               acc=81.19 orchR=74.09 orchP=8.52  AP=34.43  folds->[71, 22, 210, 21, 210]
+  l2aall         pruned_proba_cache_noexpallens_seed1         acc=81.03 orchR=75.54 orchP=8.19  AP=34.12  folds->[71, 119, 162, 260, 71]
+  l2aall         pruned_proba_cache_noexpallens_seed2         acc=81.09 orchR=76.45 orchP=8.13  AP=34.40  folds->[71, 168, 162, 260, 260]
+
+  final          mean orchard recall 75.24 +/- 0.64   mean orchard AP 35.31
+  none           mean orchard recall 60.69 +/- 0.91   mean orchard AP 25.68
+  l1cnet         mean orchard recall 61.41 +/- 0.65   mean orchard AP 26.29
+  l2aall         mean orchard recall 75.36 +/- 1.19   mean orchard AP 34.31
+
+Paired differences (NEW - OLD), 95% block-bootstrap intervals (2000 resamples, seed 0):
+  final-none seed 42: accuracy +0.04 [-0.15,+0.22] P(>0)=0.66 | orchard_recall +14.31 [+10.91,+17.98] P(>0)=1.00
+  final-none seed 1: accuracy +0.02 [-0.19,+0.23] P(>0)=0.56 | orchard_recall +13.95 [+10.70,+17.46] P(>0)=1.00
+  final-none seed 2: accuracy +0.16 [-0.03,+0.39] P(>0)=0.94 | orchard_recall +15.40 [+11.59,+19.30] P(>0)=1.00
+  final-l1cnet seed 42: accuracy -0.00 [-0.20,+0.21] P(>0)=0.48 | orchard_recall +14.67 [+11.38,+18.41] P(>0)=1.00
+  final-l1cnet seed 1: accuracy +0.00 [-0.21,+0.21] P(>0)=0.50 | orchard_recall +12.50 [+9.17,+15.98] P(>0)=1.00
+  final-l1cnet seed 2: accuracy +0.11 [-0.10,+0.31] P(>0)=0.85 | orchard_recall +14.31 [+11.06,+17.83] P(>0)=1.00
+  final-l2aall seed 42: accuracy -0.15 [-0.30,+0.02] P(>0)=0.04 | orchard_recall +1.81 [-1.12,+5.11] P(>0)=0.88
+  final-l2aall seed 1: accuracy +0.00 [-0.18,+0.20] P(>0)=0.46 | orchard_recall -0.91 [-3.28,+1.73] P(>0)=0.21
+  final-l2aall seed 2: accuracy +0.07 [-0.09,+0.23] P(>0)=0.81 | orchard_recall -1.27 [-4.10,+1.89] P(>0)=0.18
+  l2aall-l1cnet seed 42: accuracy +0.15 [-0.01,+0.30] P(>0)=0.97 | orchard_recall +12.86 [+9.59,+16.25] P(>0)=1.00
+  l2aall-l1cnet seed 1: accuracy +0.00 [-0.19,+0.19] P(>0)=0.52 | orchard_recall +13.41 [+10.02,+16.85] P(>0)=1.00
+  l2aall-l1cnet seed 2: accuracy +0.04 [-0.17,+0.24] P(>0)=0.64 | orchard_recall +15.58 [+12.26,+19.00] P(>0)=1.00
+  l1cnet-none seed 42: accuracy +0.04 [-0.07,+0.15] P(>0)=0.77 | orchard_recall -0.36 [-2.20,+1.41] P(>0)=0.30
+  l1cnet-none seed 1: accuracy +0.02 [-0.09,+0.13] P(>0)=0.63 | orchard_recall +1.45 [-0.40,+3.38] P(>0)=0.92
+  l1cnet-none seed 2: accuracy +0.06 [-0.04,+0.16] P(>0)=0.88 | orchard_recall +1.09 [-0.74,+2.88] P(>0)=0.83

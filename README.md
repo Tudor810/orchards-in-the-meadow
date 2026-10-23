@@ -170,6 +170,7 @@ scripts lives in `src/agricultureai`.
 | `orchard_verifier.py` | Two-stage orchard verifier (`oof` / `features` / `verify`) |
 | `compute_model_metrics.py` | Confusion matrices, micro / macro P, R, F1, orchard error shares |
 | `paired_ap_ci.py` | Paired block-bootstrap interval for the orchard-AP difference of two arms |
+| `recall_at_accuracy_floor.py` | Cross-fitted orchard recall at an accuracy floor (default 81%) and orchard AP, paired |
 | `ablate_meta_layouts.py` | Feature-layout ablation |
 
 **`scripts/rotation/`**: pre-registered region rotation
@@ -393,6 +394,12 @@ parcels without an L1C series) gives the meta-classifier almost nothing over phe
 | L1C network | 82.12 / 43.5 | 67.0 | 64.5 | 81.30 | 26.8 |
 | L2A network (all dates) | 82.66 / 48.1 | 77.0 | 74.3 | 82.16 | 33.3 |
 
+These rows are the earlier configuration (expert blocks included, one network per seed). The paper's Table 2
+reruns the comparison on the final design, each network block averaging three seeds
+(`logs/meta_protocol_table2_final.log`, `logs/table2_final_at81.log`, `logs/table2_final_ap_ci.log`): orchard AP
+25.7 with no network, 26.3 with the L1C network, 34.3 / 35.3 with the L2A network on all / clear dates; orchard
+recall at accuracy ≥ 81% 60.7, 61.4, 75.4 and 75.2.
+
 L2A minus L1C, paired per seed: +0.49 / +0.55 / +0.58 accuracy (accuracy-first), +10.7 /
 +9.1 / +10.3 orchard recall (orchard-first) and +0.87 / +0.82 / +0.89 accuracy (closest to
 stretch); every one of these intervals excludes zero. On its own the L1C network is also
@@ -504,6 +511,28 @@ python scripts/meta/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_see
   --arm finaloof=$O,${O}_seed1,${O}_seed2 --pair finaloof:final \
   --output-log artifacts/meta_protocol_leakage_final.log --output-json artifacts/meta_protocol_leakage_final.json
 python scripts/meta/paired_ap_ci.py $O $A
+# Table 2 on the final configuration: the network block removed or replaced by 3-seed averages
+# (msresnet_{l1c,l2a}_all_ens3 = element-wise mean of the three seeds' logits, like msresnet_l2a_clear_ens3)
+for s in 42 1 2; do
+  sfx=$([ $s = 42 ] || echo _seed$s)
+  for m in 1 2 3; do
+    for net in none l1c_all l2a_all; do
+      case $net in
+        none) arm=noexpnone; extra=() ;;
+        l1c_all) arm=noexpl1cens; E=artifacts/checkpoints/msresnet_l1c_all_ens3; extra=(--extra msl1cens=$E/logits_train.npz,$E/logits_eval.npz) ;;
+        l2a_all) arm=noexpallens; E=artifacts/checkpoints/msresnet_l2a_all_ens3; extra=(--extra msallens=$E/logits_train.npz,$E/logits_eval.npz) ;;
+      esac
+      python scripts/meta/train_meta_variants.py --seed $s --multipliers $m --drop-blocks l3_raw,cereal \n        --proba-dir artifacts/pruned_proba_cache_$arm$sfx \n        --extra pheno=artifacts/phenology_train.npz,artifacts/phenology_eval.npz "${extra[@]}"
+    done
+  done
+done
+P=artifacts/pruned_proba_cache_
+ARMS="--arm final=${P}noexpens,${P}noexpens_seed1,${P}noexpens_seed2 --arm none=${P}noexpnone,${P}noexpnone_seed1,${P}noexpnone_seed2
+  --arm l1cnet=${P}noexpl1cens,${P}noexpl1cens_seed1,${P}noexpl1cens_seed2 --arm l2aall=${P}noexpallens,${P}noexpallens_seed1,${P}noexpallens_seed2"
+PAIRS="--pair final:none --pair final:l1cnet --pair final:l2aall --pair l2aall:l1cnet --pair l1cnet:none"
+python scripts/meta/evaluate_meta_protocol.py $ARMS $PAIRS \n  --output-log artifacts/meta_protocol_table2_final.log --output-json artifacts/meta_protocol_table2_final.json
+python scripts/meta/recall_at_accuracy_floor.py $ARMS $PAIRS --output-log artifacts/table2_final_at81.log
+python scripts/meta/paired_ap_ci.py ${P}noexpens ${P}noexpnone   # likewise for the other pairs
 # end-to-end baselines with the same decision dial (unweighted, orchards x10, capped sqrt-inverse)
 for s in 42 1 2; do
   sfx=$([ $s = 42 ] || echo _seed$s)

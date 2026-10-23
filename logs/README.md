@@ -30,11 +30,10 @@ rows printed here.
 
 | File | Backs |
 | --- | --- |
-| `meta_protocol_cloud_3seeds.log` | Table 2 accuracy-first columns for meta + phenology (`pheno`) and the L2A network on all dates (`phenomsall`) or clear dates (`phenomsclear`) |
-| `meta_protocol_l1c_control.log` | Table 2 accuracy-first columns for the network on L1C (`phenomsl1c`) |
-| `l1c_control_eval.log` | Table 2 recall at accuracy ≥ 81% and orchard AP for `pheno`, `phenomsall`, `phenomsl1c`; the L2A and L1C networks on their own |
-| `cloud_ap_ci81_3seeds.log` | Table 2 recall at accuracy ≥ 81% and orchard AP for `phenomsclear`; clear vs all dates |
-| `max_orchard_at81_3seeds.log` | Recall at accuracy ≥ 81% for `pheno`, `phenomsall`, `phenomsclear` (README) |
+| `meta_protocol_table2_final.log`, `.json` | Table 2 accuracy-first columns, final configuration: the final design (`final`) with its network block removed (`none`) or replaced by the 3-seed L1C average (`l1cnet`) or the 3-seed all-dates L2A average (`l2aall`) |
+| `table2_final_at81.log` | Table 2 recall at accuracy ≥ 81% and orchard AP, with paired intervals (`scripts/meta/recall_at_accuracy_floor.py`) |
+| `table2_final_ap_ci.log` | Table 2 orchard AP differences, paired intervals (`paired_ap_ci.py`; `noexpens` = final, `noexpnone`, `noexpl1cens`, `noexpallens`) |
+| `meta_protocol_cloud_3seeds.log`, `meta_protocol_l1c_control.log`, `l1c_control_eval.log`, `cloud_ap_ci81_3seeds.log`, `max_orchard_at81_3seeds.log` | The same comparison in the earlier configuration (expert blocks included, one network per seed; README); the L2A and L1C networks on their own, and clear vs all dates for the network alone |
 | `meta_protocol_frh04.log` | Eight-view inputs vs zero-padded inputs: +0.36 to +0.50 accuracy (`msfix` vs `aligned`, Section 3.2) |
 | `meta_protocol_noexperts.log` | Dropping the expert blocks (`noexperts`) |
 | `meta_protocol_checks245.log` | Dropping the pretrained L1C networks (`l2anet` vs `noexperts`); three-network ensemble (`noexpens`) |
