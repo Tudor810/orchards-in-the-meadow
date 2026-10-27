@@ -1,0 +1,40 @@
+# BreizhCrops L2A, from artifacts\series_store/<region>.npz (scripts/data/build_series_store.py)
+
+## Parcels, orchards and series per region
+region     parcels  orchards  orch.%  dates median  <45 dates  clear dates
+frh01      178,632       937   0.52%            39      81.6%        31.9%
+frh02      140,782       348   0.25%            39      88.8%        35.2%
+frh03      166,367     1,217   0.73%            37      81.3%        36.5%
+frh04      122,708       552   0.45%            27      85.0%        40.1%
+train frh01-frh03: 485,781 parcels
+test frh04: 122,708 parcels
+total: 608,489 parcels
+
+## Classes (training = frh01-frh03, test = frh04)
+class                    train  train%     test   test%
+barley                  30,941   6.37%    5,981   4.87%
+wheat                   72,608  14.95%   17,009  13.86%
+rapeseed                11,502   2.37%    3,244   2.64%
+corn                   122,634  25.24%   31,361  25.56%
+sunflower                   17   0.00%        2   0.00%
+orchards                 2,502   0.52%      552   0.45%
+nuts                        38   0.01%       11   0.01%
+permanent meadows      101,701  20.94%   26,134  21.30%
+temporary meadows      143,838  29.61%   38,414  31.31%
+total                  485,781 100.00%  122,708 100.00%
+
+## Orchards per region and per rotation fold (training orchards when that region is held out)
+frh01: 937 orchards (30.7% of 3,054); held out -> 2,117 training orchards
+frh02: 348 orchards (11.4% of 3,054); held out -> 2,706 training orchards
+frh03: 1,217 orchards (39.8% of 3,054); held out -> 1,837 training orchards
+frh04: 552 orchards (18.1% of 3,054); held out -> 2,502 training orchards
+
+## Parcels without an L1C series (L1C-network features set to missing)
+train: 394
+test: 151
+
+## Raw L2A observations with a non-zero cloud fraction (CLD > 0)
+frh01: 4,377,172 of 6,394,214 (68.5%)
+frh02: 3,286,774 of 5,049,057 (65.1%)
+frh03: 3,709,786 of 5,822,922 (63.7%)
+frh04: 2,411,956 of 4,006,236 (60.2%)

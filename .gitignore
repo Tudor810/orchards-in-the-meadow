@@ -33,3 +33,6 @@ test_target_indices.json
 
 # Presentation material (kept locally, not part of the code repository)
 Presentation/
+
+# Word comparison files made for reviewing paper revisions
+paper/*_tracked_changes.docx

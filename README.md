@@ -134,6 +134,7 @@ scripts lives in `src/agricultureai`.
 | Script | Purpose |
 | --- | --- |
 | `build_series_store.py` | Pack L2A (or L1C) series + per-date clear-sky flags per region |
+| `dataset_summary.py` | Dataset statistics of the paper's Section 3.1 and Table 1 (`--raw` adds the cloud statistic) |
 | `compute_phenology_features.py` | 15 orchard-vs-meadow phenology features from clear dates |
 
 **`scripts/cascade/`**: four-tier expert cascade, branch-output caches, pretrained baselines
@@ -394,7 +395,7 @@ parcels without an L1C series) gives the meta-classifier almost nothing over phe
 | L1C network | 82.12 / 43.5 | 67.0 | 64.5 | 81.30 | 26.8 |
 | L2A network (all dates) | 82.66 / 48.1 | 77.0 | 74.3 | 82.16 | 33.3 |
 
-These rows are the earlier configuration (expert blocks included, one network per seed). The paper's Table 2
+These rows are the earlier configuration (expert blocks included, one network per seed). The paper's Table 3
 reruns the comparison on the final design, each network block averaging three seeds
 (`logs/meta_protocol_table2_final.log`, `logs/table2_final_at81.log`, `logs/table2_final_ap_ci.log`): orchard AP
 25.7 with no network, 26.3 with the L1C network, 34.3 / 35.3 with the L2A network on all / clear dates; orchard
@@ -511,7 +512,7 @@ python scripts/meta/evaluate_meta_protocol.py --arm final=$A,${A}_seed1,${A}_see
   --arm finaloof=$O,${O}_seed1,${O}_seed2 --pair finaloof:final \
   --output-log artifacts/meta_protocol_leakage_final.log --output-json artifacts/meta_protocol_leakage_final.json
 python scripts/meta/paired_ap_ci.py $O $A
-# Table 2 on the final configuration: the network block removed or replaced by 3-seed averages
+# Table 3 of the paper, on the final configuration: the network block removed or replaced by 3-seed averages
 # (msresnet_{l1c,l2a}_all_ens3 = element-wise mean of the three seeds' logits, like msresnet_l2a_clear_ens3)
 for s in 42 1 2; do
   sfx=$([ $s = 42 ] || echo _seed$s)
